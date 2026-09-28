@@ -20,6 +20,7 @@ import {
   PanelLeftOpen,
   Search,
   CheckCircle2,
+  HelpCircle,
   LucideIcon
 } from 'lucide-react';
 
@@ -71,6 +72,11 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
   const handleLogout = () => {
     logoutUser();
     router.push('/');
+  };
+
+  const handleResetTour = () => {
+    localStorage.removeItem('midi_onboarding_tour_completed');
+    window.location.reload();
   };
 
   if (!currentUser) {
@@ -186,7 +192,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                     </span>
                   </div>
                   <span className="text-[10px] text-slate-400 truncate">
-                    by <strong className="text-brand-400 font-medium">Midi Agency</strong>
+                    par <strong className="text-brand-400 font-medium">Midi Agency</strong>
                   </span>
                 </div>
               )}

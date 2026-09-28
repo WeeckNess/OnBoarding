@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ArcSidebar from './ArcSidebar';
+import OnboardingTour from './OnboardingTour';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoaded } = useOnboarding();
@@ -66,7 +67,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // When logged in, render Arc Sidebar + adjusted content area
+  // When logged in, render Arc Sidebar + adjusted content area + OnboardingTour
   return (
     <div className="flex w-full min-h-screen">
       <ArcSidebar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
@@ -92,6 +93,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </footer>
       </div>
+
+      {/* Interactive Tour Assistant */}
+      <OnboardingTour />
     </div>
   );
 }
