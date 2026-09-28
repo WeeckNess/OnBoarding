@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { formatDate } from '@/lib/onboarding';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ProgressBar from '@/components/ProgressBar';
 import { 
@@ -82,6 +83,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <Link href="/arrival" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-400/25 bg-brand-400/5 p-5 hover:bg-brand-400/10"><div><h2 className="font-semibold text-brand-300">Mon arrivée & mon suivi</h2><p className="text-sm text-slate-400 mt-1">Accueil, matériel, objectifs et échanges avec ton manager.</p></div><ArrowRight size={20} className="text-brand-400" /></Link>
       {/* Progress Bar Widget */}
       <div id="tour-progress-bar">
         <ProgressBar />
@@ -192,7 +194,7 @@ export default function DashboardPage() {
                 <div className="p-8 text-center text-slate-400 space-y-2">
                   <Sparkles className="w-8 h-8 text-brand-400 mx-auto animate-bounce" />
                   <p className="font-bold text-white text-sm">Toutes les actions sont complétées 🎉</p>
-                  <p className="text-xs">Tu es désormais 100% autonome sur la plateforme.</p>
+                  <p className="text-xs">Tu as terminé les actions prévues. Fais le point sur ton autonomie avec ton manager.</p>
                 </div>
               ) : (
                 nextTasks.map((task) => {
@@ -208,7 +210,10 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <button
-                          onClick={() => toggleTask(task.id)}
+                          aria-label={`Terminer ou rouvrir : ${task.title}`}
+                        disabled={task.id === "task-j1-1"}
+                        title={task.id === "task-j1-1" ? "Signature à réaliser dans Documents" : undefined}
+                        onClick={() => void toggleTask(task.id)}
                           className="mt-0.5 text-slate-400 hover:text-brand-400 transition-colors cursor-pointer shrink-0"
                         >
                           {isCompleted ? (
@@ -220,7 +225,7 @@ export default function DashboardPage() {
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-500/15 text-brand-300 border border-brand-500/20 shrink-0">
-                              J{task.dayNumber}
+                              {task.dueDate ? formatDate(task.dueDate) : `J${task.dayNumber}`}
                             </span>
                             <h4 className={`text-xs font-bold truncate ${isCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
                               {task.title}

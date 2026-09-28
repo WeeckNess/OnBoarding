@@ -42,10 +42,9 @@ export default function ContractsPage() {
     if (!signatureData && !currentUser?.contractSigned) return;
 
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
-    signContract(signatureData || currentUser?.signatureImage || '');
+    const saved = await signContract(signatureData || currentUser?.signatureImage || '');
     setIsSubmitting(false);
-    triggerConfetti();
+    if (saved) triggerConfetti();
   };
 
   const handlePrintDownload = () => {
@@ -87,6 +86,7 @@ export default function ContractsPage() {
         </div>
       </div>
 
+      <p className="text-sm text-amber-200 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">Prototype : la signature du contrat et du NDA est simulée. Aucun service de certification ni envoi externe n’est connecté.</p>
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-white/10 pb-2">
         <button
@@ -204,7 +204,7 @@ export default function ContractsPage() {
               <div>
                 <span className="text-[10px] text-slate-400 block font-mono">Signé électroniquement par :</span>
                 <span className="font-bold text-brand-400 text-sm">{employeeName}</span>
-                <span className="text-[10px] text-slate-500 block">Horodatage certifié Data Insight</span>
+                <span className="text-[10px] text-slate-500 block">Enregistrement de démonstration Data Insight</span>
               </div>
               <div className="w-32 h-12 bg-carbon-900 rounded-xl flex items-center justify-center border border-white/10 overflow-hidden">
                 {currentUser?.signatureImage || signatureData ? (
@@ -237,7 +237,7 @@ export default function ContractsPage() {
                     <span>Contrat validé et signé !</span>
                   </div>
                   <p>
-                    Vos documents ont été transmis à l’équipe RH de Data Insight. Vous pouvez télécharger une copie d’archive ou passer directement à votre feuille de route.
+                    Votre signature de démonstration est enregistrée et le statut est visible par votre manager. Vous pouvez imprimer cette page ou poursuivre votre parcours.
                   </p>
                 </div>
 

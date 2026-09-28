@@ -53,7 +53,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: 'Formalités Légales',
     title: 'Signature Électronique du Contrat & NDA ✍️',
     subtitle: 'Valide ton CDI et tes accès en toute sécurité',
-    description: 'Consulte ton contrat de travail à durée indéterminée et l’accord de confidentialité, puis appose ta signature numérique à la souris ou au clavier. Le document est immédiatement certifié.',
+    description: 'Consulte ton contrat de travail à durée indéterminée et l’accord de confidentialité, puis appose ta signature numérique à la souris ou au clavier. La signature est simulée pour cette démonstration.',
     targetPath: '/contracts',
     actionText: 'Aller signer mon contrat',
     interactiveType: 'contract'
@@ -294,7 +294,7 @@ export default function OnboardingTour() {
                         <div className="text-center space-y-1">
                           <CheckCircle2 className="w-5 h-5 text-brand-400 mx-auto" />
                           <span className="text-xs font-bold text-brand-400 italic">Alexandre Moreau ✓</span>
-                          <span className="text-[10px] block text-slate-400">Contrat certifié</span>
+                          <span className="text-[10px] block text-slate-400">Signature simulée</span>
                         </div>
                       ) : (
                         <div className="text-center space-y-1 text-xs">

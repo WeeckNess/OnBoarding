@@ -90,6 +90,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
       id: 'onboarding',
       title: 'Mon Embarquement',
       items: [
+        { href: '/arrival', label: 'Mon arrivée & mon suivi', icon: UserCheck },
         { 
           href: '/dashboard', 
           label: 'Tableau de bord', 
@@ -141,6 +142,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
       {/* Mobile Top Bar with Hamburger */}
       <div className="md:hidden sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <button
+          aria-label="Ouvrir le menu"
           onClick={() => setIsMobileOpen(true)}
           className="p-2 rounded-xl bg-carbon-850 text-slate-200 border border-white/10"
         >
@@ -172,7 +174,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
           isCollapsed ? 'w-20 items-center' : 'w-72'
         } ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          isMobileOpen ? 'translate-x-0 visible' : '-translate-x-full invisible md:translate-x-0 md:visible'
         } bg-[#141518]/95 backdrop-blur-2xl border-r border-white/10 text-slate-300 shadow-2xl`}
       >
         {/* Top Header */}
