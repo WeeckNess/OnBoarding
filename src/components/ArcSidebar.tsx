@@ -20,8 +20,8 @@ import {
   PanelLeftOpen,
   Search,
   CheckCircle2,
-  HelpCircle,
-  LucideIcon
+  LucideIcon,
+  Sparkles
 } from 'lucide-react';
 
 interface NavItem {
@@ -57,6 +57,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
   } = useOnboarding();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [resetToast, setResetToast] = useState(false);
 
   // Dropdown accordions state (Arc spaces / folders)
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
@@ -74,9 +75,10 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
     router.push('/');
   };
 
-  const handleResetTour = () => {
-    localStorage.removeItem('midi_onboarding_tour_completed');
-    window.location.reload();
+  const handleReset = () => {
+    resetProgress();
+    setResetToast(true);
+    setTimeout(() => setResetToast(false), 2000);
   };
 
   if (!currentUser) {
@@ -168,81 +170,96 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
       {/* Sidebar Container (Arc Style Midi Agency) */}
       <aside
         className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
-          isCollapsed ? 'w-20' : 'w-72'
+          isCollapsed ? 'w-20 items-center' : 'w-72'
         } ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } bg-[#141518]/95 backdrop-blur-2xl border-r border-white/10 text-slate-300 shadow-2xl`}
       >
-        {/* Top Arc Brand & Space Switcher */}
-        <div className="p-4 space-y-4 border-b border-white/5">
-          <div className="flex items-center justify-between">
-            <Link 
-              href="/dashboard" 
-              className="flex items-center gap-3 overflow-hidden group"
-            >
-              <div className="w-9 h-9 shrink-0 relative rounded-xl overflow-hidden shadow-md shadow-brand-500/20 ring-1 ring-brand-500/40 group-hover:scale-105 transition-transform">
+        {/* Top Header */}
+        <div className={`w-full p-4 border-b border-white/5 ${isCollapsed ? 'flex flex-col items-center gap-3' : 'space-y-4'}`}>
+          
+          {isCollapsed ? (
+            /* Clean Collapsed Header: Centered Logo + Toggle Button */
+            <div className="flex flex-col items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="w-10 h-10 relative rounded-2xl overflow-hidden shadow-lg shadow-brand-500/20 ring-2 ring-brand-500/40 hover:scale-110 transition-transform"
+                title="Data Insight Onboarding"
+              >
                 <Image src="/logo-midi.png" alt="Midi Agency" fill className="object-cover" />
-              </div>
-              {!isCollapsed && (
-                <div className="flex flex-col truncate">
-                  <div className="flex items-center gap-1.5 font-bold text-white tracking-tight text-sm">
-                    <span className="truncate">Data Insight</span>
-                    <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-brand-500/15 text-brand-300 border border-brand-500/30 shrink-0">
-                      Onboarding
+              </Link>
+
+              <button
+                onClick={onToggleCollapse}
+                className="p-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-brand-400 hover:text-white border border-white/5 transition-all cursor-pointer shadow-sm hover:scale-105"
+                title="Déplier la barre latérale"
+              >
+                <PanelLeftOpen className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            /* Expanded Header: Logo + Title + Collapse Button */
+            <>
+              <div className="flex items-center justify-between">
+                <Link 
+                  href="/dashboard" 
+                  className="flex items-center gap-3 overflow-hidden group"
+                >
+                  <div className="w-9 h-9 shrink-0 relative rounded-xl overflow-hidden shadow-md shadow-brand-500/20 ring-1 ring-brand-500/40 group-hover:scale-105 transition-transform">
+                    <Image src="/logo-midi.png" alt="Midi Agency" fill className="object-cover" />
+                  </div>
+                  <div className="flex flex-col truncate">
+                    <div className="flex items-center gap-1.5 font-bold text-white tracking-tight text-sm">
+                      <span className="truncate">Data Insight</span>
+                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-brand-500/15 text-brand-300 border border-brand-500/30 shrink-0">
+                        Onboarding
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 truncate">
+                      par <strong className="text-brand-400 font-medium">Midi Agency</strong>
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 truncate">
-                    par <strong className="text-brand-400 font-medium">Midi Agency</strong>
+                </Link>
+
+                <button
+                  onClick={onToggleCollapse}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-brand-300 hover:bg-white/5 transition-colors cursor-pointer"
+                  title="Replier le menu"
+                >
+                  <PanelLeftClose className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+
+              {/* Arc Space Capsule */}
+              <div className="p-3 rounded-2xl bg-carbon-850/90 border border-white/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                    Espace Salarié
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
+                    {progressPercentage}% complété
                   </span>
                 </div>
-              )}
-            </Link>
-
-            {/* Collapse Toggle Button (Arc style) */}
-            <button
-              onClick={onToggleCollapse}
-              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-brand-300 hover:bg-white/5 transition-colors cursor-pointer"
-              title={isCollapsed ? "Déplier le menu" : "Replier le menu"}
-            >
-              {isCollapsed ? (
-                <PanelLeftOpen className="w-4 h-4 text-brand-400" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4 text-slate-400" />
-              )}
-            </button>
-          </div>
-
-          {/* Arc Space Capsule / Profile Header */}
-          {!isCollapsed && (
-            <div className="p-3 rounded-2xl bg-carbon-850/90 border border-white/5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                  Espace Salarié
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
-                  {progressPercentage}% complété
-                </span>
+                
+                <div className="w-full bg-carbon-900 rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-brand-500/30"
+                    style={{ width: `${Math.max(progressPercentage, 5)}%` }}
+                  />
+                </div>
               </div>
-              
-              {/* Mini progress bar */}
-              <div className="w-full bg-carbon-900 rounded-full h-1.5 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-brand-500/30"
-                  style={{ width: `${Math.max(progressPercentage, 5)}%` }}
-                />
-              </div>
-            </div>
+            </>
           )}
         </div>
 
         {/* Navigation Section with Dropdown Accordions */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        <div className={`flex-1 overflow-y-auto w-full p-3 space-y-4 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
           
           {navGroups.map((group) => {
             const isOpen = openSections[group.id] ?? true;
 
             return (
-              <div key={group.id} className="space-y-1">
+              <div key={group.id} className={`w-full space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
                 {/* Group Dropdown Header */}
                 {!isCollapsed ? (
                   <button
@@ -257,12 +274,12 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                     )}
                   </button>
                 ) : (
-                  <div className="w-full h-px bg-white/5 my-2" />
+                  <div className="w-8 h-px bg-white/10 my-1 mx-auto" />
                 )}
 
                 {/* Items in this group */}
                 {(isOpen || isCollapsed) && (
-                  <div className="space-y-1">
+                  <div className={`space-y-1.5 ${isCollapsed ? 'flex flex-col items-center w-full' : 'w-full'}`}>
                     {group.items.map((item) => {
                       const Icon = item.icon;
                       const isActive = pathname === item.href;
@@ -272,11 +289,19 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsMobileOpen(false)}
-                          title={isCollapsed ? item.label : undefined}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all group ${
-                            isActive
-                              ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-bold shadow-md shadow-brand-500/20'
-                              : 'text-slate-300 hover:text-white hover:bg-white/5'
+                          title={item.label}
+                          className={`flex items-center rounded-2xl text-xs font-medium transition-all group ${
+                            isCollapsed
+                              ? `w-12 h-12 justify-center ${
+                                  isActive
+                                    ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-bold shadow-md shadow-brand-500/25 scale-105'
+                                    : 'text-slate-300 hover:text-white hover:bg-carbon-850'
+                                }`
+                              : `gap-3 px-3.5 py-2.5 w-full ${
+                                  isActive
+                                    ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-bold shadow-md shadow-brand-500/20'
+                                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                                }`
                           }`}
                         >
                           <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
@@ -330,10 +355,20 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         </div>
 
         {/* Footer: User Profile & Actions */}
-        <div className="p-3 border-t border-white/5 space-y-2 bg-[#101114]">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/5 transition-colors">
-              <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-carbon-950 text-xs font-black ring-2 ring-brand-500/40">
+        <div className={`p-3 border-t border-white/5 space-y-2 bg-[#101114] w-full ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+          
+          {resetToast && (
+            <div className="p-2 rounded-xl bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[11px] font-bold text-center animate-in fade-in">
+              ✨ Onboarding réinitialisé !
+            </div>
+          )}
+
+          <div className="space-y-2 w-full">
+            <div className={`flex items-center p-1.5 rounded-xl hover:bg-white/5 transition-colors ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+              <div 
+                className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-carbon-950 text-xs font-black ring-2 ring-brand-500/40"
+                title={`${currentUser.firstName} ${currentUser.lastName} (${currentUser.role})`}
+              >
                 {currentUser.firstName?.[0] || 'U'}{currentUser.lastName?.[0] || ''}
               </div>
 
@@ -352,29 +387,37 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
             {!isCollapsed ? (
               <div className="grid grid-cols-2 gap-1.5 pt-1">
                 <button
-                  onClick={resetProgress}
-                  title="Réinitialiser pour démo"
-                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-carbon-850 hover:bg-carbon-800 text-[11px] text-slate-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                  onClick={handleReset}
+                  title="Réinitialiser l'onboarding pour la démo"
+                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-[11px] font-bold text-slate-300 hover:text-brand-300 border border-white/5 transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="w-3 h-3 text-brand-400" />
                   <span>Reset</span>
                 </button>
 
                 <button
                   onClick={handleLogout}
                   title="Déconnexion"
-                  className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-[11px] text-red-300 border border-red-500/20 transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-[11px] font-bold text-red-300 border border-red-500/20 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3 h-3" />
                   <span>Quitter</span>
                 </button>
               </div>
             ) : (
-              <div className="flex justify-center pt-1">
+              <div className="flex flex-col gap-2 items-center pt-1">
+                <button
+                  onClick={handleReset}
+                  title="Réinitialiser l'onboarding"
+                  className="p-2.5 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-brand-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
                 <button
                   onClick={handleLogout}
                   title="Déconnexion"
-                  className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                  className="p-2.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>

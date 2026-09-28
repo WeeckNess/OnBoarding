@@ -24,6 +24,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 const STORAGE_KEY_USER = 'midi_onboarding_user';
 const STORAGE_KEY_TASKS = 'midi_onboarding_completed_tasks';
+const STORAGE_KEY_TOUR = 'midi_onboarding_tour_completed';
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
@@ -31,7 +32,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Load from localStorage on client side
     try {
       const storedUser = localStorage.getItem(STORAGE_KEY_USER);
       const storedTasks = localStorage.getItem(STORAGE_KEY_TASKS);
@@ -64,7 +64,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     let user = INITIAL_EMPLOYEES.find(e => e.email.toLowerCase() === cleanEmail);
 
     if (!user) {
-      // Dynamic profile creation for demo testing
       user = {
         id: `emp-${Date.now()}`,
         firstName: firstName || cleanEmail.split('@')[0].split('.')[0] || 'Nouveau',
@@ -89,6 +88,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     saveUserState(null);
     setCompletedTaskIds([]);
     localStorage.removeItem(STORAGE_KEY_TASKS);
+    localStorage.removeItem(STORAGE_KEY_TOUR);
   };
 
   const signContract = (signatureImage: string) => {
@@ -103,11 +103,11 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     saveUserState(updated);
     
     // Also auto-complete the contract signature task in roadmap
-    if (!completedTaskIds.includes('task-j1-1')) {
-      const nextTasks = [...completedTaskIds, 'task-j1-1'];
-      setCompletedTaskIds(nextTasks);
+    setCompletedTaskIds((prev) => {
+      const nextTasks = Array.from(new Set([...prev, 'task-j1-1']));
       localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(nextTasks));
-    }
+      return nextTasks;
+    });
   };
 
   const toggleTask = (taskId: string) => {
@@ -115,13 +115,29 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       const exists = prev.includes(taskId);
       const next = exists ? prev.filter(id => id !== taskId) : [...prev, taskId];
       localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(next));
+
+      // Also sync back to currentUser if it's task-j1-1
+      if (taskId === 'task-j1-1' && currentUser) {
+        const isNowSigned = next.includes('task-j1-1');
+        const updatedUser = {
+          ...currentUser,
+          contractSigned: isNowSigned,
+          signatureDate: isNowSigned ? (currentUser.signatureDate || new Date().toISOString()) : undefined
+        };
+        saveUserState(updatedUser);
+      }
+
       return next;
     });
   };
 
   const resetProgress = () => {
+    // 1. Clear all task state & storage
     setCompletedTaskIds([]);
     localStorage.removeItem(STORAGE_KEY_TASKS);
+    localStorage.removeItem(STORAGE_KEY_TOUR);
+
+    // 2. Reset user's contract state in state & storage
     if (currentUser) {
       const resetUser: Employee = {
         ...currentUser,
