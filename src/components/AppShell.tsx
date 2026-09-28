@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import ManagerSidebar from './manager/ManagerSidebar';
 import Image from 'next/image';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ArcSidebar from './ArcSidebar';
@@ -121,18 +120,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // When logged in, render Arc Sidebar + adjusted content area + OnboardingTour
   return (
     <div className="flex flex-col md:flex-row w-full min-h-screen">
-      {isManager ? (
-        <ManagerSidebar />
-      ) : (
-        <ArcSidebar
-          isCollapsed={isCollapsed}
-          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-        />
-      )}
+      <ArcSidebar
+        isCollapsed={isCollapsed}
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+      />
 
       <div
         className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-          isCollapsed && !isManager ? 'md:pl-20' : 'md:pl-72'
+          isCollapsed ? 'md:pl-20' : 'md:pl-72'
         }`}
       >
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-8 py-8">
@@ -152,8 +147,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 />
               </div>
               <span>
-                © {new Date().getFullYear()} Data Insight SAS — Intégration
-                Salarié
+                © {new Date().getFullYear()} Data Insight SAS — Parcours
+                d’intégration
               </span>
             </div>
             <span className="text-slate-400">

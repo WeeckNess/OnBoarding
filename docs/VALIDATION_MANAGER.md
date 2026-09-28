@@ -19,7 +19,19 @@ Base : `main`, commit `04f73a78154d4b7c029e09e18bcd0d3a657614d6`. Vérifications
 - Formulaire mobile : dialogue natif, contenu défilant, fermeture avec Échap.
 - Aucune erreur JavaScript remontée par la session de vérification finale.
 
-Les captures d’écran automatiques ont bloqué dans l’outil de navigateur ; la vérification responsive repose sur les interactions, l’arbre d’accessibilité et les dimensions DOM, pas sur une revue d’images.
+## Reprise visuelle — 28 septembre 2026
+
+Reprise sur la base `bbe7007`, à partir du parcours collaborateur de WeeckNess. La sidebar Arc est désormais commune aux deux rôles. Le tableau de bord, les fiches, les statuts, les formulaires et les étapes reprennent ses couleurs, proportions et surfaces.
+
+- Captures réelles inspectées à 1440 × 1080 et 390 × 844 : tableau de bord, préparation, tâches par étape, suivi et formulaires. Les captures ont été réalisées avec Playwright sur le Chrome de test installé, après le blocage du mécanisme de capture agent-browser lors du lot précédent. Aucune dépendance de test visuel ajoutée au projet.
+- Vérification des recherches et états vides, cinq rubriques de la fiche, filtres par responsable et ouverture des étapes.
+- Enregistrement du formulaire d’accueil vérifié dans le navigateur.
+- Sidebar commune : navigation par rôle, mode compact à 80 px, dépliage, menu mobile et retour du focus après Échap.
+- Formulaire mobile contenu dans le viewport ; page sans débordement horizontal (390 px).
+- Parcours collaborateur revérifié après mutualisation de la navigation : connexion, dashboard, liens, progression et accès au suivi.
+- Aucune erreur JavaScript dans la session de contrôle finale.
+
+Les captures et scripts de revue temporaires ne sont pas inclus dans Git.
 
 ## Limites assumées
 

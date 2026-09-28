@@ -23,6 +23,8 @@ Ouvrir http://localhost:3000 et choisir un profil. Les données sont initialisé
 
 ## Parcours manager
 
+Les deux rôles partagent la sidebar Arc et les styles du parcours collaborateur : panneaux translucides, accents dorés, cartes et formulaires. Le menu est repliable sur ordinateur et utilisable au clavier sur mobile. Les tâches du manager sont regroupées par étape et filtrables par responsable.
+
 - `/manager` : arrivées de l’équipe, filtres, recherche, préparation de J1 et alertes de blocage/retard. Une checklist complétée ne signifie pas que tous les accès sont prêts.
 - `/manager/[id]` : accueil, buddy et message de bienvenue ; demandes structurées de matériel et d’accès ; attribution et adaptation des tâches ; objectifs ; état des documents ; points J1/J+7/J+30 et comptes rendus ; feedback ; résolution des blocages ; rappels dans l’application ; historique des actions.
 - Les demandes ont un responsable, une échéance, un statut et un indicateur « indispensable à J1 ». Leur traitement est suivi manuellement : aucune commande fournisseur ni création de compte IT n’est exécutée.
