@@ -44,7 +44,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       
       {/* Welcome Banner */}
-      <div className="relative glass-panel p-6 sm:p-10 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+      <div id="tour-welcome-banner" className="relative glass-panel p-6 sm:p-10 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -63,14 +63,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Status summary pill */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div id="tour-contract-status" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             {!contractSigned ? (
               <Link
                 href="/contracts"
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-bold hover:bg-amber-500/30 transition-all shadow-md"
               >
                 <AlertCircle className="w-4 h-4 text-amber-400" />
-                <span>Contrat en attente de signature</span>
+                <span>Contrat à signer</span>
               </Link>
             ) : (
               <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold shadow-md">
@@ -83,63 +83,71 @@ export default function DashboardPage() {
       </div>
 
       {/* Progress Bar Widget */}
-      <ProgressBar />
+      <div id="tour-progress-bar">
+        <ProgressBar />
+      </div>
 
       {/* Quick Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div id="tour-quick-nav" className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Card 1: Roadmap */}
-        <Link href="/roadmap" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
-              <MapPin className="w-6 h-6 text-brand-400" />
+        <Link href="/roadmap" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
+                <MapPin className="w-6 h-6 text-brand-400" />
+              </div>
+              <span className="text-xs text-slate-400 font-mono flex items-center gap-1 group-hover:text-brand-300">
+                Explorer <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-            <span className="text-xs text-slate-400 font-mono flex items-center gap-1 group-hover:text-brand-300">
-              Explorer <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </span>
+            <h2 className="text-lg font-bold text-white mb-1">Roadmap J+1 à 30</h2>
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+              Toutes tes actions quotidiennes, installations logicielles et jalons jusqu’au bilan du 1er mois.
+            </p>
           </div>
-          <h2 className="text-lg font-bold text-white mb-1">Roadmap J+1 à 30</h2>
-          <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-            Toutes tes actions quotidiennes, installations logicielles et jalons jusqu’au bilan du 1er mois.
-          </p>
           <div className="flex items-center gap-2 text-xs text-brand-300 font-bold pt-2 border-t border-white/5">
             <span>{completedTaskIds.length} / {tasks.length} tâches terminées</span>
           </div>
         </Link>
 
         {/* Card 2: Codex */}
-        <Link href="/codex" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-carbon-800 border border-white/10 flex items-center justify-center text-brand-300 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-6 h-6 text-brand-400" />
+        <Link href="/codex" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-carbon-800 border border-white/10 flex items-center justify-center text-brand-300 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-6 h-6 text-brand-400" />
+              </div>
+              <span className="text-xs text-slate-400 font-mono flex items-center gap-1 group-hover:text-brand-300">
+                Consulter <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-            <span className="text-xs text-slate-400 font-mono flex items-center gap-1 group-hover:text-brand-300">
-              Consulter <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </span>
+            <h2 className="text-lg font-bold text-white mb-1">Codex & Documentation</h2>
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+              Culture Data Insight, stack technique (Snowflake, dbt), rituels, politique télétravail et avantages.
+            </p>
           </div>
-          <h2 className="text-lg font-bold text-white mb-1">Codex & Documentation</h2>
-          <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-            Culture Data Insight, stack technique (Snowflake, dbt), rituels, politique télétravail et avantages.
-          </p>
           <div className="flex items-center gap-2 text-xs text-brand-300 font-bold pt-2 border-t border-white/5">
             <span>5 guides essentiels disponibles</span>
           </div>
         </Link>
 
         {/* Card 3: Buddy */}
-        <Link href="/buddy" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
-              <UserCheck className="w-6 h-6 text-brand-400" />
+        <Link href="/buddy" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
+                <UserCheck className="w-6 h-6 text-brand-400" />
+              </div>
+              <span className="text-xs text-slate-400 font-mono flex items-center gap-1 group-hover:text-brand-300">
+                Voir le profil <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
-            <span className="text-xs text-slate-400 font-mono flex items-center gap-1 group-hover:text-brand-300">
-              Voir le profil <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </span>
+            <h2 className="text-lg font-bold text-white mb-1">Mon Parrain (Buddy)</h2>
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+              {currentBuddy?.name || 'Camille Reynaud'} est ton interlocuteur dédié pour t’épauler au quotidien.
+            </p>
           </div>
-          <h2 className="text-lg font-bold text-white mb-1">Mon Parrain (Buddy)</h2>
-          <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-            {currentBuddy?.name || 'Camille Reynaud'} est ton interlocuteur dédié pour t’épauler au quotidien.
-          </p>
           <div className="flex items-center gap-2 text-xs text-brand-300 font-bold pt-2 border-t border-white/5">
             <Coffee className="w-3.5 h-3.5" />
             <span>Café d’accueil prévu Jour 1</span>
@@ -148,154 +156,176 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Main Grid: Priority Checklist + Buddy Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* Main Grid: Perfectly Aligned & Sized (Tasks + Buddy) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
-        {/* Left: Next Tasks Checklist */}
-        <div className="lg:col-span-8 glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 space-y-6 shadow-xl">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Clock className="w-5 h-5 text-brand-400" />
-                <span>Tes prochaines actions prioritaires</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                Coche les actions au fur et à mesure de ta journée pour mettre à jour ta progression.
-              </p>
+        {/* Left: Next Tasks Checklist Card */}
+        <div id="tour-priority-tasks" className="lg:col-span-7 glass-panel p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
+          <div className="space-y-5">
+            
+            {/* Standardized Card Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 h-14">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-brand-500/15 border border-brand-500/25 flex items-center justify-center text-brand-400 shrink-0">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white leading-tight">
+                    Actions Prioritaires
+                  </h2>
+                  <p className="text-xs text-slate-400 leading-tight mt-0.5">
+                    À réaliser aujourd'hui
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/roadmap"
+                className="text-xs text-brand-400 hover:text-brand-300 font-bold px-3 py-1.5 rounded-xl bg-carbon-850 hover:bg-carbon-800 border border-white/5 transition-all"
+              >
+                Voir les 30 jours
+              </Link>
             </div>
-            <Link
-              href="/roadmap"
-              className="text-xs text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1"
-            >
-              Voir les 30 jours
-            </Link>
+
+            {/* Tasks List */}
+            <div className="space-y-3">
+              {nextTasks.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 space-y-2">
+                  <Sparkles className="w-8 h-8 text-brand-400 mx-auto animate-bounce" />
+                  <p className="font-bold text-white text-sm">Toutes les actions sont complétées 🎉</p>
+                  <p className="text-xs">Tu es désormais 100% autonome sur la plateforme.</p>
+                </div>
+              ) : (
+                nextTasks.map((task) => {
+                  const isCompleted = completedTaskIds.includes(task.id);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`p-3.5 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                        isCompleted
+                          ? 'bg-carbon-900/40 border-white/5 opacity-60'
+                          : 'bg-carbon-850 border-white/10 hover:border-brand-500/40'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <button
+                          onClick={() => toggleTask(task.id)}
+                          className="mt-0.5 text-slate-400 hover:text-brand-400 transition-colors cursor-pointer shrink-0"
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-5 h-5 text-brand-400" />
+                          ) : (
+                            <Circle className="w-5 h-5 text-slate-500 hover:text-white" />
+                          )}
+                        </button>
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-500/15 text-brand-300 border border-brand-500/20 shrink-0">
+                              J{task.dayNumber}
+                            </span>
+                            <h4 className={`text-xs font-bold truncate ${isCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
+                              {task.title}
+                            </h4>
+                          </div>
+                          <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                            {task.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {task.actionUrl && (
+                        <Link
+                          href={task.actionUrl}
+                          className="shrink-0 text-[11px] px-3 py-1.5 rounded-xl bg-carbon-900 hover:bg-brand-500 hover:text-carbon-950 text-slate-200 border border-white/5 font-bold transition-all hidden sm:inline-flex items-center gap-1"
+                        >
+                          <span>{task.actionLabel || 'Ouvrir'}</span>
+                          <ExternalLink className="w-3 h-3 text-slate-400" />
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {nextTasks.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 space-y-2">
-                <Sparkles className="w-8 h-8 text-brand-400 mx-auto animate-bounce" />
-                <p className="font-bold text-white">Félicitations ! Toutes les tâches sont complétées 🎉</p>
-                <p className="text-xs">Tu es désormais 100% autonome sur la plateforme.</p>
-              </div>
-            ) : (
-              nextTasks.map((task) => {
-                const isCompleted = completedTaskIds.includes(task.id);
-                return (
-                  <div
-                    key={task.id}
-                    className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-4 ${
-                      isCompleted
-                        ? 'bg-carbon-900/40 border-white/5 opacity-60'
-                        : 'bg-carbon-850 border-white/10 hover:border-brand-500/40'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => toggleTask(task.id)}
-                        className="mt-0.5 text-slate-400 hover:text-brand-400 transition-colors cursor-pointer"
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-brand-400" />
-                        ) : (
-                          <Circle className="w-5 h-5 text-slate-500 hover:text-white" />
-                        )}
-                      </button>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-500/15 text-brand-300 border border-brand-500/20">
-                            Jour {task.dayNumber}
-                          </span>
-                          <h4 className={`text-xs sm:text-sm font-bold ${isCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
-                            {task.title}
-                          </h4>
-                        </div>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                          {task.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {task.actionUrl && (
-                      <Link
-                        href={task.actionUrl}
-                        className="shrink-0 text-xs px-3.5 py-1.5 rounded-xl bg-carbon-900 hover:bg-brand-500 hover:text-carbon-950 text-slate-200 border border-white/5 font-bold transition-all hidden sm:inline-flex items-center gap-1"
-                      >
-                        <span>{task.actionLabel || 'Ouvrir'}</span>
-                        <ExternalLink className="w-3 h-3 text-slate-400" />
-                      </Link>
-                    )}
-                  </div>
-                );
-              })
-            )}
+          <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+            <span>Coche tes actions pour actualiser ta jauge</span>
+            <span className="font-mono text-brand-400 font-bold">{completedTaskIds.length}/{tasks.length}</span>
           </div>
         </div>
 
-        {/* Right: Quick Buddy Widget */}
-        <div className="lg:col-span-4 space-y-6">
-          {currentBuddy && (
-            <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-5 shadow-xl">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-brand-400" />
-                  <span>Ton Parrain Attitré</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
-                  Disponible
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentBuddy.avatarUrl}
-                  alt={currentBuddy.name}
-                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-brand-500/30 shadow-md"
-                />
+        {/* Right: Buddy Card (Identical Height & Header Proportion) */}
+        <div id="tour-buddy-card" className="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
+          <div className="space-y-5">
+            
+            {/* Standardized Card Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 h-14">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-brand-500/15 border border-brand-500/25 flex items-center justify-center text-brand-400 shrink-0">
+                  <UserCheck className="w-4 h-4" />
+                </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">{currentBuddy.name}</h3>
-                  <p className="text-xs text-brand-300 font-medium">{currentBuddy.role}</p>
-                  <p className="text-[11px] text-slate-500">{currentBuddy.department}</p>
+                  <h2 className="text-base font-bold text-white leading-tight">
+                    Mon Buddy Attitré
+                  </h2>
+                  <p className="text-xs text-slate-400 leading-tight mt-0.5">
+                    Point de contact dédié
+                  </p>
                 </div>
               </div>
-
-              <p className="text-xs text-slate-300 italic bg-carbon-900 p-3 rounded-2xl border border-white/5">
-                "{currentBuddy.welcomeMessage}"
-              </p>
-
-              <div className="space-y-2.5 text-xs">
-                <a
-                  href={`https://slack.com/app_redirect?channel=${currentBuddy.slackHandle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-white font-medium border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4 text-brand-400" />
-                  <span>Envoyer un Slack ({currentBuddy.slackHandle})</span>
-                </a>
-
-                <a
-                  href={currentBuddy.meetingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold flex items-center justify-center gap-2 transition-all shadow-md shadow-brand-500/20 cursor-pointer hover:opacity-95"
-                >
-                  <Calendar className="w-4 h-4 text-carbon-950" />
-                  <span>Planifier notre café d’accueil</span>
-                </a>
-              </div>
+              <span className="text-[10px] px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
+                Disponible
+              </span>
             </div>
-          )}
 
-          {/* Quick Help Card */}
-          <div className="glass-card p-5 rounded-3xl border border-white/5 space-y-2 text-xs">
-            <h3 className="font-bold text-white flex items-center gap-1.5">
-              <span>Besoin d’aide supplémentaire ?</span>
-            </h3>
-            <p className="text-slate-400">
-              L’équipe support RH et l’équipe IT sont joignables sur le canal Slack <strong className="text-white">#ask-hr-it</strong> à tout moment.
-            </p>
+            {currentBuddy && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentBuddy.avatarUrl}
+                    alt={currentBuddy.name}
+                    className="w-14 h-14 rounded-2xl object-cover ring-2 ring-brand-500/30 shadow-md shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-white text-sm truncate">{currentBuddy.name}</h3>
+                    <p className="text-xs text-brand-300 font-medium truncate">{currentBuddy.role}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{currentBuddy.department}</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 italic bg-carbon-850 p-3.5 rounded-2xl border border-white/5 leading-relaxed">
+                  "{currentBuddy.welcomeMessage}"
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <a
+                    href={`https://slack.com/app_redirect?channel=${currentBuddy.slackHandle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2.5 px-3 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-white font-semibold border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-brand-400" />
+                    <span>Slack direct</span>
+                  </a>
+
+                  <a
+                    href={currentBuddy.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-brand-500/20 cursor-pointer hover:opacity-95"
+                  >
+                    <Coffee className="w-3.5 h-3.5 text-carbon-950" />
+                    <span>Café d’accueil</span>
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+            <span>Rituels de suivi</span>
+            <Link href="/buddy" className="text-brand-400 font-bold hover:underline">Voir le planning</Link>
           </div>
         </div>
 
