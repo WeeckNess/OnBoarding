@@ -12,11 +12,10 @@ import {
   Download, 
   ArrowRight, 
   Building2, 
-  Calendar, 
-  Award, 
   FileText,
   Lock,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 
 export default function ContractsPage() {
@@ -28,10 +27,10 @@ export default function ContractsPage() {
 
   const triggerConfetti = () => {
     confetti({
-      particleCount: 80,
+      particleCount: 90,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#00E5FF', '#136BFC', '#10B981', '#F59E0B']
+      colors: ['#DEAF4A', '#E8BC60', '#F6E1B6', '#F59E0B', '#34D399']
     });
   };
 
@@ -61,28 +60,28 @@ export default function ContractsPage() {
   const employeeDept = currentUser?.department || 'Data Platform';
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-4">
+    <div className="max-w-5xl mx-auto space-y-8 py-2">
       
       {/* Header Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden border border-white/10">
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden border border-white/10 shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-semibold mb-2">
-              <FileCheck2 className="w-3.5 h-3.5 text-accent-cyan" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/15 text-brand-300 text-xs font-semibold mb-2 border border-brand-500/25">
+              <FileCheck2 className="w-3.5 h-3.5 text-brand-400" />
               <span>Contrats & Documents Administratifs</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
               Contrat de Travail à Durée Indéterminée (CDI)
             </h1>
             <p className="text-xs sm:text-sm text-slate-300">
-              Société <strong>Data Insight SAS</strong> • Salarié : <span className="text-accent-cyan font-semibold">{employeeName}</span>
+              Société <strong>Data Insight SAS</strong> • Salarié : <span className="text-brand-400 font-bold">{employeeName}</span>
             </p>
           </div>
 
           {currentUser?.contractSigned && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold shadow-md">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Contrat Signé & Archivé</span>
+              <span>Contrat Signé & Validé</span>
             </div>
           )}
         </div>
@@ -92,9 +91,9 @@ export default function ContractsPage() {
       <div className="flex items-center gap-2 border-b border-white/10 pb-2">
         <button
           onClick={() => setActiveTab('contract')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'contract'
-              ? 'bg-brand-600 text-white shadow-sm'
+              ? 'bg-brand-500 text-carbon-950 shadow-md shadow-brand-500/20'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -103,14 +102,14 @@ export default function ContractsPage() {
         </button>
         <button
           onClick={() => setActiveTab('nda')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'nda'
-              ? 'bg-brand-600 text-white shadow-sm'
+              ? 'bg-brand-500 text-carbon-950 shadow-md shadow-brand-500/20'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
           <Lock className="w-4 h-4" />
-          <span>2. Accord de Confidentialité & Sécurité Données (NDA)</span>
+          <span>2. Accord de Confidentialité & RGPD (NDA)</span>
         </button>
       </div>
 
@@ -118,11 +117,11 @@ export default function ContractsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column: The Legal Text Document */}
-        <div className="lg:col-span-7 bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl space-y-6 text-xs text-slate-300 leading-relaxed font-sans max-h-[620px] overflow-y-auto">
+        <div className="lg:col-span-7 bg-carbon-900 rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl space-y-6 text-xs text-slate-300 leading-relaxed font-sans max-h-[620px] overflow-y-auto">
           
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center font-bold text-white text-xs">
+              <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center font-bold text-carbon-950 text-xs">
                 DI
               </div>
               <span className="font-bold text-white text-sm">DATA INSIGHT SAS</span>
@@ -132,7 +131,7 @@ export default function ContractsPage() {
 
           {activeTab === 'contract' ? (
             <div className="space-y-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider text-center py-2 border-y border-white/5 bg-slate-950/40">
+              <h2 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider text-center py-2.5 border-y border-white/5 bg-carbon-850">
                 CONTRAT DE TRAVAIL À DURÉE INDÉTERMINÉE
               </h2>
 
@@ -178,7 +177,7 @@ export default function ContractsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider text-center py-2 border-y border-white/5 bg-slate-950/40">
+              <h2 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider text-center py-2.5 border-y border-white/5 bg-carbon-850">
                 ACCORD DE CONFIDENTIALITÉ & GOUVERNANCE DATA
               </h2>
               <p>
@@ -201,19 +200,19 @@ export default function ContractsPage() {
 
           {/* Signed Status preview inside document */}
           {(currentUser?.contractSigned || signatureData) && (
-            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between bg-slate-950/60 p-4 rounded-xl">
+            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between bg-carbon-850 p-4 rounded-2xl border border-brand-500/20">
               <div>
                 <span className="text-[10px] text-slate-400 block font-mono">Signé électroniquement par :</span>
-                <span className="font-bold text-accent-cyan text-sm">{employeeName}</span>
-                <span className="text-[10px] text-slate-500 block">Horodatage sécurisé Data Insight</span>
+                <span className="font-bold text-brand-400 text-sm">{employeeName}</span>
+                <span className="text-[10px] text-slate-500 block">Horodatage certifié Data Insight</span>
               </div>
-              <div className="w-32 h-12 bg-white/5 rounded-lg flex items-center justify-center border border-white/10 overflow-hidden">
+              <div className="w-32 h-12 bg-carbon-900 rounded-xl flex items-center justify-center border border-white/10 overflow-hidden">
                 {currentUser?.signatureImage || signatureData ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={currentUser?.signatureImage || signatureData}
                     alt="Signature"
-                    className="max-h-full max-w-full object-contain filter invert brightness-200"
+                    className="max-h-full max-w-full object-contain"
                   />
                 ) : null}
               </div>
@@ -225,16 +224,16 @@ export default function ContractsPage() {
         <div className="lg:col-span-5 space-y-6">
           
           <div className="glass-panel p-6 rounded-3xl space-y-5 border border-white/10 shadow-xl">
-            <div className="flex items-center gap-2 text-brand-300">
-              <ShieldCheck className="w-5 h-5 text-accent-cyan" />
+            <div className="flex items-center gap-2 text-brand-400">
+              <ShieldCheck className="w-5 h-5 text-brand-400" />
               <h2 className="text-base font-bold text-white">Apposer votre signature</h2>
             </div>
             
             {currentUser?.contractSigned ? (
               <div className="space-y-4 py-2">
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 space-y-2 text-xs">
-                  <div className="flex items-center gap-2 font-bold text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
+                <div className="p-4 rounded-2xl bg-brand-500/10 border border-brand-500/30 text-brand-200 space-y-2 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-brand-300">
+                    <CheckCircle2 className="w-4 h-4 text-brand-400" />
                     <span>Contrat validé et signé !</span>
                   </div>
                   <p>
@@ -245,18 +244,18 @@ export default function ContractsPage() {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={handlePrintDownload}
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 border border-white/10 transition-colors"
+                    className="w-full py-3 px-4 rounded-2xl bg-carbon-850 hover:bg-carbon-800 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 border border-white/10 transition-colors cursor-pointer"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 text-brand-400" />
                     <span>Télécharger / Imprimer le contrat</span>
                   </button>
 
                   <button
                     onClick={() => router.push('/dashboard')}
-                    className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-accent-cyan text-white font-bold text-sm shadow-lg shadow-brand-500/25 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold text-sm shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>Accéder à mon Dashboard Onboarding</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 text-carbon-950" />
                   </button>
                 </div>
               </div>
@@ -271,13 +270,13 @@ export default function ContractsPage() {
                   type="button"
                   disabled={!signatureData || isSubmitting}
                   onClick={handleConfirmSignature}
-                  className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold text-sm shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <span>Horodatage et enregistrement...</span>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 text-white" />
+                      <Sparkles className="w-4 h-4 text-carbon-950" />
                       <span>Confirmer et Signer mon Contrat</span>
                     </>
                   )}
@@ -287,9 +286,9 @@ export default function ContractsPage() {
           </div>
 
           {/* Next steps widget */}
-          <div className="glass-card p-5 rounded-2xl border border-white/5 space-y-3 text-xs">
+          <div className="glass-card p-5 rounded-3xl border border-white/5 space-y-3 text-xs">
             <h3 className="font-bold text-white flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-accent-cyan" />
+              <Calendar className="w-4 h-4 text-brand-400" />
               <span>Prochaines étapes après la signature</span>
             </h3>
             <ul className="space-y-2 text-slate-300">

@@ -27,7 +27,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
     canvas.height = rect.height * 2;
     ctx.scale(2, 2);
 
-    ctx.strokeStyle = '#00E5FF';
+    ctx.strokeStyle = '#DEAF4A';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -107,7 +107,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
 
     if (name.trim()) {
       ctx.font = 'italic 32px "Caveat", "Brush Script MT", cursive, sans-serif';
-      ctx.fillStyle = '#00E5FF';
+      ctx.fillStyle = '#DEAF4A';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(name, rect.width / 2, rect.height / 2);
@@ -123,13 +123,13 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
     <div className="space-y-3">
       {/* Mode Selector */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 bg-slate-900/80 p-1 rounded-lg border border-white/10 text-xs">
+        <div className="flex items-center gap-2 bg-carbon-850 p-1 rounded-xl border border-white/10 text-xs">
           <button
             type="button"
             onClick={() => setMode('draw')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               mode === 'draw'
-                ? 'bg-brand-600 text-white font-medium shadow-sm'
+                ? 'bg-brand-500 text-carbon-950 font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -139,9 +139,9 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
           <button
             type="button"
             onClick={() => setMode('type')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               mode === 'type'
-                ? 'bg-brand-600 text-white font-medium shadow-sm'
+                ? 'bg-brand-500 text-carbon-950 font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -153,7 +153,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
         <button
           type="button"
           onClick={clearCanvas}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-white/5"
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer"
         >
           <Eraser className="w-3.5 h-3.5" />
           <span>Effacer</span>
@@ -165,16 +165,16 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
         <div>
           <input
             type="text"
-            placeholder="Tape ton nom complet pour générer ta signature..."
+            placeholder="Tapez votre nom complet pour générer la signature..."
             value={typedName}
             onChange={(e) => handleTypeSubmit(e.target.value)}
-            className="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent-cyan"
+            className="w-full bg-carbon-850 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
           />
         </div>
       )}
 
       {/* Signature Canvas Box */}
-      <div className="relative border-2 border-dashed border-slate-700 hover:border-brand-500/50 rounded-xl bg-slate-950/60 overflow-hidden transition-colors">
+      <div className="relative border-2 border-dashed border-white/15 hover:border-brand-500/50 rounded-2xl bg-carbon-900 overflow-hidden transition-colors">
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
@@ -189,13 +189,13 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
 
         {!hasContent && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 text-xs">
-            {mode === 'draw' ? '✍️ Signe ici à la souris ou au doigt' : 'Tape ton nom dans le champ ci-dessus'}
+            {mode === 'draw' ? '✍️ Signez ici à la souris ou au doigt' : 'Tapez votre nom ci-dessus'}
           </div>
         )}
 
         {hasContent && (
-          <div className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full pointer-events-none">
-            <CheckCircle2 className="w-3 h-3" />
+          <div className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-brand-300 bg-brand-950/80 border border-brand-500/30 px-2.5 py-0.5 rounded-full pointer-events-none font-medium">
+            <CheckCircle2 className="w-3 h-3 text-brand-400" />
             <span>Prêt à valider</span>
           </div>
         )}

@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
-  --card: #111827;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --brand-primary: #136bfc;
-  --brand-cyan: #00e5ff;
+  --background: #141518;
+  --foreground: #f6f5f2;
+  --card: #1c1e22;
+  --card-border: rgba(222, 175, 74, 0.12);
+  --brand-primary: #deaf4a;
+  --brand-gold: #e8bc60;
+  --carbon-dark: #121315;
 }
 
 body {
@@ -19,51 +20,51 @@ body {
   overflow-x: hidden;
 }
 
-/* Glassmorphism utility classes */
+/* Solar & Charcoal Glassmorphism */
 .glass-panel {
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 25, 28, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .glass-card {
-  background: rgba(26, 35, 54, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(30, 32, 36, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
-  border-color: rgba(0, 229, 255, 0.25);
+  border-color: rgba(222, 175, 74, 0.35);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px rgba(0, 229, 255, 0.08);
+  box-shadow: 0 12px 30px -10px rgba(222, 175, 74, 0.12);
 }
 
 .glow-brand {
-  box-shadow: 0 0 25px -5px rgba(19, 107, 252, 0.4);
+  box-shadow: 0 0 30px -5px rgba(222, 175, 74, 0.35);
 }
 
-.glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(0, 229, 255, 0.4);
+.glow-subtle {
+  box-shadow: 0 4px 20px -2px rgba(222, 175, 74, 0.15);
 }
 
 /* Custom modern scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #141518;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f293d;
+  background: #2b2d33;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #3e4149;
 }

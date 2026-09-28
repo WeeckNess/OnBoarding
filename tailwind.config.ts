@@ -11,24 +11,33 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        // Midi Agency Solar Gold & Warm Sand
         brand: {
-          50: "#eef7ff",
-          100: "#d9ecff",
-          200: "#bcdfff",
-          300: "#8eccff",
-          400: "#58b0ff",
-          500: "#2f8dff",
-          600: "#136bfc",
-          700: "#0b53e8",
-          800: "#0e43bd",
-          900: "#113c94",
-          950: "#0a245c",
+          50: "#fdf8ee",
+          100: "#fbf1db",
+          200: "#f6e1b6",
+          300: "#f0cf8c",
+          400: "#e8bc60",
+          500: "#deaf4a", // Logo Ochre Gold
+          600: "#c69435",
+          700: "#9e7027",
+          800: "#7a5522",
+          900: "#5e421d",
+          950: "#38260e",
+        },
+        // Midi Dark Charcoal / Carbon System
+        carbon: {
+          800: "#272a30",
+          850: "#1e2024",
+          900: "#18191c",
+          950: "#121315",
         },
         accent: {
-          cyan: "#00E5FF",
-          emerald: "#10B981",
-          purple: "#8B5CF6",
+          gold: "#DEAF4A",
           amber: "#F59E0B",
+          sand: "#E5D9C5",
+          emerald: "#34D399",
+          coral: "#F87171",
         }
       },
     },
