@@ -1,13 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { BUDDIES_DATA } from '../mockData';
-import { REQUEST_LABELS } from '../onboarding';
 import {
   HttpError,
   authorize,
   recordById,
   saveRecord,
   visibleRecord,
-  markAutomaticReminderRead,
 } from './store';
 import type { Account, ManagedTask, PreparationRequest } from '@/types/manager';
 
@@ -66,6 +64,9 @@ export async function applyAction(account: Account, id: string, payload: unknown
     );
   const managerActions = [
     'welcome',
+    'request.save',
+    'task.save',
+    'task.delete',
     'goal.save',
     'meeting.save',
     'blocker.resolve',
@@ -87,24 +88,6 @@ export async function applyAction(account: Account, id: string, payload: unknown
     (action.type === 'hr.compliance.set' && account.appRole !== 'admin')
   )
     throw new HttpError(403, 'Cette action ne correspond pas à votre rôle.');
-  if (
-    ['request.save', 'task.save', 'task.delete'].includes(
-      String(action.type)
-    ) &&
-    !['manager', 'rh'].includes(account.appRole)
-  )
-    throw new HttpError(
-      403,
-      'Cette préparation est réservée au manager ou aux RH.'
-    );
-  if (
-    action.type === 'request.status' &&
-    !['manager', 'rh', 'it'].includes(account.appRole)
-  )
-    throw new HttpError(
-      403,
-      'Seul le service responsable peut traiter une demande.'
-    );
   const now = new Date().toISOString();
   let label = '';
   switch (action.type) {
@@ -129,108 +112,33 @@ export async function applyAction(account: Account, id: string, payload: unknown
       const input = object(action.request);
       const existing =
         input.id === undefined ? null : find(record.requests, input.id);
-      if (
-        input.status !== undefined ||
-        input.note !== undefined ||
-        input.validatedBy !== undefined ||
-        input.validatedAt !== undefined
-      )
-        throw new HttpError(
-          403,
-          'La définition du besoin ne permet pas de valider sa disponibilité.'
-        );
-      const owner = option(input.owner, ['IT', 'RH', 'Manager']);
-      const kind = option(input.kind, ['hardware', 'access']);
-      if (existing && owner !== existing.owner)
-        throw new HttpError(
-          403,
-          'Le service responsable ne peut pas être changé depuis une demande existante.'
-        );
-      if (
-        (kind === 'access' && owner !== 'IT') ||
-        (!existing &&
-          (owner === 'Manager' ||
-            (account.appRole === 'manager' && owner !== 'IT')))
-      )
-        throw new HttpError(
-          403,
-          'Ces besoins sont transmis à l’IT pour préparation et validation.'
-        );
       const request: PreparationRequest = {
         id: existing?.id || randomUUID(),
-        kind,
+        kind: option(input.kind, ['hardware', 'access']),
         title: text(input.title, 120),
         details: text(input.details, 1500),
-        owner,
+        owner: option(input.owner, ['IT', 'RH', 'Manager']),
         dueDate: date(input.dueDate),
-        status: 'requested',
+        status: option(input.status, [
+          'requested',
+          'in_progress',
+          'ready',
+          'blocked',
+        ]),
         blocking: bool(input.blocking),
-        note: '',
+        note: text(input.note, 1000, false),
       };
-      if (existing) {
-        const changed = [
-          'kind',
-          'title',
-          'details',
-          'dueDate',
-          'blocking',
-        ].some(
-          (key) =>
-            existing[key as keyof PreparationRequest] !==
-            request[key as keyof PreparationRequest]
-        );
-        if (changed) {
-          Object.assign(existing, request);
-          delete existing.validatedBy;
-          delete existing.validatedAt;
-        }
-      } else record.requests.push(request);
-      label = `${existing ? 'Suivi actualisé' : 'Demande créée'} : ${request.title}`;
-      break;
-    }
-    case 'request.status': {
-      const request = find(record.requests, action.id);
-      const service = { manager: 'Manager', rh: 'RH', it: 'IT', employee: '', admin: '' }[
-        account.appRole
-      ];
-      if (request.owner !== service)
-        throw new HttpError(
-          403,
-          'Vous ne pouvez valider que les demandes de votre service.'
-        );
-      request.status = option(action.status, [
-        'requested',
-        'in_progress',
-        'ready',
-        'blocked',
-      ]);
-      request.note = text(action.note, 1000, false);
       if (request.status === 'blocked' && !request.note)
         throw new HttpError(400, 'Précisez la cause du blocage.');
-      delete request.validatedBy;
-      delete request.validatedAt;
-      if (request.status === 'ready') {
-        request.validatedBy = `${account.firstName} ${account.lastName}`.trim();
-        request.validatedAt = now;
-      }
-      label = `Traitement ${service} : ${request.title} · ${REQUEST_LABELS[request.status]}`;
+      if (existing) Object.assign(existing, request);
+      else record.requests.push(request);
+      label = `${existing ? 'Suivi actualisé' : 'Demande créée'} : ${request.title}`;
       break;
     }
     case 'task.save': {
       const input = object(action.task);
       const existing =
         input.id === undefined ? null : find(record.tasks, input.id);
-      if (
-        (account.appRole === 'manager' &&
-          (existing?.category === 'admin' || input.category === 'admin')) ||
-        (account.appRole === 'rh' &&
-          ((existing && existing.category !== 'admin') ||
-            input.category !== 'admin'))
-      )
-        throw new HttpError(
-          403,
-          'Les tâches administratives sont pilotées par les RH ; les tâches d’intégration par le manager.'
-        );
       if (existing?.id === 'task-j1-1')
         throw new HttpError(
           400,
@@ -248,12 +156,7 @@ export async function applyAction(account: Account, id: string, payload: unknown
         id: existing?.id || randomUUID(),
         title: text(input.title, 150),
         description: text(input.description, 1000, false),
-        owner: option(
-          input.owner,
-          account.appRole === 'rh'
-            ? ['rh', 'employee']
-            : ['manager', 'employee']
-        ),
+        owner: option(input.owner, ['manager', 'employee']),
         dueDate: date(input.dueDate),
         milestoneId,
         dayNumber: { prearrival: 0, j1: 1, s1: 3, s2: 8, j15: 15, j30: 30 }[
@@ -274,11 +177,6 @@ export async function applyAction(account: Account, id: string, payload: unknown
     }
     case 'task.toggle': {
       const task = find(record.tasks, action.id);
-      if (
-        (account.appRole === 'manager' && task.category === 'admin') ||
-        (account.appRole === 'rh' && task.category !== 'admin')
-      )
-        throw new HttpError(403, 'Cette tâche relève d’un autre périmètre.');
       if (task.owner !== account.appRole)
         throw new HttpError(
           403,
@@ -295,11 +193,6 @@ export async function applyAction(account: Account, id: string, payload: unknown
     }
     case 'task.delete': {
       const task = find(record.tasks, action.id);
-      if (
-        (account.appRole === 'manager' && task.category === 'admin') ||
-        (account.appRole === 'rh' && task.category !== 'admin')
-      )
-        throw new HttpError(403, 'Cette tâche relève d’un autre périmètre.');
       if (task.id === 'task-j1-1')
         throw new HttpError(
           400,
@@ -400,15 +293,6 @@ export async function applyAction(account: Account, id: string, payload: unknown
       break;
     }
     case 'notification.read': {
-      if (String(action.id).startsWith('auto:')) {
-        const reminderId = text(action.id, 200);
-        await markAutomaticReminderRead(account, record, reminderId);
-        const visible = visibleRecord(account, record);
-        visible.notifications = visible.notifications.map((notification) =>
-          notification.id === reminderId ? { ...notification, read: true } : notification
-        );
-        return visible;
-      }
       find(record.notifications, action.id).read = true;
       label = 'Rappel lu';
       break;
@@ -461,15 +345,10 @@ export async function applyAction(account: Account, id: string, payload: unknown
       break;
     }
     case 'reset': {
-      if (process.env.DEMO_RESET_ENABLED !== 'true')
-        throw new HttpError(
-          403,
-          'La réinitialisation est désactivée hors du mode de démonstration dédié.'
-        );
       // Reset only the entrant's own progression; retain manager preparation and other users.
       record.employee.completedTaskIds =
         record.employee.completedTaskIds.filter((id) =>
-          record.tasks.some((t) => t.id === id && t.owner !== 'employee')
+          record.tasks.some((t) => t.id === id && t.owner === 'manager')
         );
       record.employee.contractSigned = false;
       delete record.employee.signatureImage;

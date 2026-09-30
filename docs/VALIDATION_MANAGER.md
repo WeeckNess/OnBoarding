@@ -33,24 +33,6 @@ Reprise sur la base `bbe7007`, à partir du parcours collaborateur de WeeckNess.
 
 Les captures et scripts de revue temporaires ne sont pas inclus dans Git.
 
-## Répartition des responsabilités — 30 septembre 2026
+## Limites assumées
 
-Base : `main`, commit `f27ac4a`. Les contrôles de rôle sont appliqués au serveur, avec des espaces de traitement RH et IT utilisant la sidebar et les styles existants.
-
-- Le manager définit les besoins IT, l’accueil, les objectifs et les tâches d’intégration. Il ne peut pas confirmer une demande d’un autre service, se la réattribuer ou modifier une tâche administrative.
-- L’IT confirme seulement ses demandes. La disponibilité est datée et attribuée au profil du service ; une modification du besoin demande une nouvelle validation.
-- Les RH pilotent les tâches administratives et traitent leurs demandes. Le bilan du premier mois reste dans le parcours d’équipe.
-- Les réponses API IT excluent les signatures, documents, objectifs, comptes rendus et feedback. Les RH reçoivent le périmètre administratif sans les notes d’accompagnement.
-- Le dashboard collaborateur distingue la pré-arrivée, J1 et J+n. Les priorités suivent les échéances ; la signature est placée avant J1 et les mentions du buddy suivent sa sélection.
-- Les rappels automatiques sont calculés au chargement, dédupliqués et retirés après réalisation. Leur lecture est persistante sans changement de version du dossier.
-- Reset masqué et refusé par défaut, activation explicite par `DEMO_RESET_ENABLED=true`, avec confirmation dans l’interface.
-
-Validation automatisée : typecheck et build réussis ; 19 tests réussis, couvrant également les rôles RH/IT, les revalidations, les rappels et la mise à jour des bases existantes sans perte de préparation ni de feedback.
-
-Scénario navigateur réalisé sur une base temporaire indépendante : création du besoin par le manager, confirmation IT, modification du besoin et retour à traiter ; création et réalisation d’une tâche RH ; parcours collaborateur avec rappels ; redirections entre les espaces. Captures inspectées sur ordinateur et mobile (390 px sans débordement pour IT, RH et collaborateur), aucune erreur JavaScript. Les captures utilisent le Chrome de test déjà installé via Playwright, en complément des vérifications agent-browser ; aucune nouvelle dépendance n’est ajoutée au projet.
-
-Les scénarios de test ne modifient pas les dossiers du serveur local. Les données locales existantes reçoivent seulement les mises à jour de structure et de libellés nécessaires.
-
-## Limites assumées à l’issue de cette passe
-
-Comptes fictifs sans authentification de production ; traitement du matériel et des accès confirmé par une personne sans intégration fournisseur/IT ; rappels internes calculés lorsque l’application est consultée ; signature simulée. Les espaces RH/IT couvrent le traitement, pas encore la création d’une arrivée ou l’import des documents. Le serveur de démonstration utilise un disque persistant local. Voir le README pour les contraintes d’hébergement et le scénario de démonstration.
+Comptes fictifs sans authentification de production ; traitement manuel du matériel et des accès ; notifications internes ; signature simulée ; aucun portail RH/IT dans ce lot. Le serveur de démonstration utilise un disque persistant local. Voir le README pour les contraintes d’hébergement et le scénario de démonstration.

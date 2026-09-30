@@ -168,8 +168,8 @@ export default function ManagerDetail({
               </div>
             </div>
             <button className={buttonClass} onClick={() => open('reminder')}>
-              <MessageSquare size={14} />
-              Envoyer un message
+              <Bell size={14} />
+              Ajouter un rappel
             </button>
           </div>
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-5 text-xs text-slate-400">
@@ -335,26 +335,8 @@ export default function ManagerDetail({
                           ? 'Indispensable dès le premier jour'
                           : 'Préparation complémentaire'}
                       </span>
-                      <div className="flex flex-wrap gap-2">
-                        {editButton(
-                          'request',
-                          request.id,
-                          'Préciser le besoin'
-                        )}
-                        {request.owner === 'Manager' &&
-                          editButton(
-                            'requestStatus',
-                            request.id,
-                            'Confirmer le statut'
-                          )}
-                      </div>
+                      {editButton('request', request.id, 'Mettre à jour')}
                     </div>
-                    {request.validatedAt && (
-                      <p className="mt-3 text-[11px] text-emerald-300">
-                        Confirmé par {request.validatedBy} le{' '}
-                        {formatDate(request.validatedAt)}
-                      </p>
-                    )}
                   </article>
                 ))}
               </div>
@@ -564,13 +546,7 @@ export default function ManagerDetail({
                                         : ''}
                                     </span>
                                     {task.id !== 'task-j1-1' &&
-                                      task.category !== 'admin' &&
                                       editButton('task', task.id)}
-                                    {task.category === 'admin' && (
-                                      <span className="text-[10px] text-slate-500">
-                                        Pilotage RH
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
                               </div>

@@ -81,7 +81,6 @@ export default function ArcSidebar({
     completedTaskIds,
     tasks,
     records,
-    demoResetEnabled,
   } = useOnboarding();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -91,9 +90,6 @@ export default function ArcSidebar({
   const compact = isCollapsed && !isMobileOpen;
   const isManager = currentUser?.appRole === 'manager';
   const isAdmin = currentUser?.appRole === 'admin';
-  const isService = currentUser?.appRole === 'rh' || currentUser?.appRole === 'it';
-  const serviceOwner = currentUser?.appRole === 'rh' ? 'RH' : 'IT';
-  const serviceRequests = records.reduce((count, record) => count + record.requests.filter((request) => request.owner === serviceOwner && request.status !== 'ready').length, 0);
   const preparedCount = records.filter(
     (record) => readiness(record).ready
   ).length;
@@ -102,7 +98,7 @@ export default function ArcSidebar({
       ? (preparedCount / records.length) * 100
       : 0
     : isAdmin ? 100 : progressPercentage;
-  const homePath = isAdmin ? '/admin' : isManager ? '/manager' : isService ? '/operations' : '/dashboard';
+  const homePath = isAdmin ? '/admin' : isManager ? '/manager' : '/dashboard';
   const today = dateOnly();
   const sortedTeam = [...records].sort((a, b) => {
     const aDays = daysFromToday(a.employee.startDate, today);
@@ -176,7 +172,6 @@ export default function ArcSidebar({
   if (!currentUser) {
     return null;
   }
-  const canReset = currentUser.appRole === 'employee' && demoResetEnabled;
 
   const navGroups: NavGroup[] = isAdmin
     ? [
@@ -229,27 +224,7 @@ export default function ArcSidebar({
           ],
         },
       ]
-    : isService
-      ? [
-          {
-            id: 'operations',
-            title: currentUser.appRole === 'it' ? 'Préparation informatique' : 'Suivi administratif',
-            items: [
-              {
-                href: '/operations',
-                label: 'Demandes & actions',
-                icon: LayoutDashboard,
-                badge: String(serviceRequests),
-              },
-            ],
-          },
-          {
-            id: 'resources',
-            title: 'Ressources',
-            items: [{ href: '/codex', label: 'Codex & Documentation', icon: BookOpen }],
-          },
-        ]
-      : [
+    : [
         {
           id: 'onboarding',
           title: 'Mon Embarquement',
@@ -422,15 +397,13 @@ export default function ArcSidebar({
               <div className="p-3 rounded-2xl bg-carbon-850/90 border border-white/5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    {isAdmin ? 'Espace RH / Admin' : isManager ? 'Espace Manager' : isService ? `Espace ${serviceOwner}` : 'Espace Salarié'}
+                    {isAdmin ? 'Espace RH / Admin' : isManager ? 'Espace Manager' : 'Espace Salarié'}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
                     {isAdmin
                       ? 'Pilotage entreprise'
                       : isManager
                       ? `${preparedCount}/${records.length} prêts`
-                      : isService
-                        ? `${serviceRequests} demandes à traiter`
                       : `${progressPercentage}% complété`}
                   </span>
                 </div>
@@ -609,9 +582,9 @@ export default function ArcSidebar({
 
             {!compact ? (
               <div
-                className={`grid ${canReset ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5 pt-1`}
+                className={`grid ${isManager ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5 pt-1`}
               >
-                {canReset && (
+                {!isManager && !isAdmin && (
                   <button
                     onClick={handleReset}
                     title="Réinitialiser l'onboarding pour la démo"
@@ -633,7 +606,7 @@ export default function ArcSidebar({
               </div>
             ) : (
               <div className="flex flex-col gap-2 items-center pt-1">
-                {canReset && (
+                {!isManager && !isAdmin && (
                   <button
                     onClick={handleReset}
                     title="Réinitialiser l'onboarding"

@@ -1,6 +1,6 @@
 import type { Employee, RoadmapTask } from './index';
 
-export type AppRole = 'manager' | 'employee' | 'admin' | 'rh' | 'it';
+export type AppRole = 'manager' | 'employee' | 'admin';
 export type Account = Employee & { appRole: AppRole };
 export type RequestStatus = 'requested' | 'in_progress' | 'ready' | 'blocked';
 export interface PreparationRequest {
@@ -13,11 +13,9 @@ export interface PreparationRequest {
   status: RequestStatus;
   blocking: boolean;
   note: string;
-  validatedBy?: string;
-  validatedAt?: string;
 }
 export interface ManagedTask extends RoadmapTask {
-  owner: 'employee' | 'manager' | 'rh';
+  owner: 'employee' | 'manager';
   dueDate: string;
 }
 export type ComplianceStatus = 'pending' | 'complete';
@@ -64,14 +62,12 @@ export interface OnboardingRecord {
     message: string;
     createdAt: string;
     read: boolean;
-    source?: 'automatic';
   }[];
   activity: { id: string; actor: string; label: string; createdAt: string }[];
 }
 export interface Workspace {
   account: Account | null;
   records: OnboardingRecord[];
-  features?: { demoReset: boolean };
 }
 export type OnboardingAction =
   | {
@@ -84,9 +80,8 @@ export type OnboardingAction =
     }
   | {
       type: 'request.save';
-      request: Pick<PreparationRequest, 'kind' | 'title' | 'details' | 'owner' | 'dueDate' | 'blocking'> & { id?: string };
+      request: Omit<PreparationRequest, 'id'> & { id?: string };
     }
-  | { type: 'request.status'; id: string; status: RequestStatus; note: string }
   | {
       type: 'task.save';
       task: Omit<ManagedTask, 'id' | 'dayNumber'> & { id?: string };

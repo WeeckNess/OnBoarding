@@ -2,13 +2,13 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { BUDDIES_DATA, ROADMAP_TASKS } from '../mockData';
-import { MOCK_ADMINS, MOCK_MANAGERS, MOCK_SERVICES } from '../mockAccounts';
+import { ROADMAP_TASKS } from '../mockData';
+import { MOCK_ADMINS, MOCK_MANAGERS } from '../mockAccounts';
 import {
   LUCCA_MOCK_DIRECTORY,
   type LuccaMockPerson,
 } from '../integrations/lucca/mockDirectory';
-import { addDays, automaticReminders, dateOnly } from '../onboarding';
+import { addDays, dateOnly } from '../onboarding';
 import type { Account, OnboardingRecord } from '@/types/manager';
 import { supabaseAdmin, supabaseIsConfigured } from './supabase';
 
@@ -150,8 +150,6 @@ export function database() {
   db.exec(`PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;
     CREATE TABLE IF NOT EXISTS onboardings (id TEXT PRIMARY KEY, manager_id TEXT NOT NULL, version INTEGER NOT NULL, data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, account_id TEXT NOT NULL, expires_at INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS schema_updates (id TEXT PRIMARY KEY);
-    CREATE TABLE IF NOT EXISTS notification_reads (account_id TEXT NOT NULL, notification_id TEXT NOT NULL, PRIMARY KEY (account_id, notification_id));
     CREATE TABLE IF NOT EXISTS lucca_mock_people (person_id TEXT PRIMARY KEY, employee_id TEXT UNIQUE NOT NULL, manager_id TEXT NOT NULL, employment_status TEXT NOT NULL, payload TEXT NOT NULL, imported_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS workspace_settings (setting_key TEXT PRIMARY KEY, setting_value TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS onboardings_manager ON onboardings(manager_id);
@@ -191,64 +189,6 @@ export function database() {
   db.prepare(
     'INSERT OR IGNORE INTO workspace_settings (setting_key, setting_value) VALUES (?, ?)'
   ).run('headcount_projection', JSON.stringify({ baseline: 50, target: 70, targetDate: '2027-12-31' }));
-
-  const migrateRecords = (migrationId: string, update: (record: OnboardingRecord) => boolean) => {
-    if (db.prepare('SELECT id FROM schema_updates WHERE id = ?').get(migrationId)) return;
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      for (const row of db.prepare('SELECT id, data FROM onboardings').all() as { id: string; data: string }[]) {
-        const record = JSON.parse(row.data) as OnboardingRecord;
-        if (!update(record)) continue;
-        record.version++;
-        record.activity.unshift({
-          id: randomUUID(),
-          actor: 'Midi Agency',
-          label: 'Parcours mis à jour pour clarifier les responsabilités de service',
-          createdAt: new Date().toISOString(),
-        });
-        db.prepare('UPDATE onboardings SET data = ?, version = ? WHERE id = ?')
-          .run(JSON.stringify(record), record.version, row.id);
-      }
-      db.prepare('INSERT INTO schema_updates VALUES (?)').run(migrationId);
-      db.exec('COMMIT');
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
-    }
-  };
-  migrateRecords('role-boundaries-v1', (record) => {
-    let changed = false;
-    const signatureTask = record.tasks.find((task) => task.id === 'task-j1-1');
-    if (signatureTask?.milestoneId === 'j1' && signatureTask.dueDate === record.employee.startDate) {
-      signatureTask.milestoneId = 'prearrival';
-      signatureTask.dayNumber = 0;
-      signatureTask.dueDate = addDays(record.employee.startDate, -3);
-      changed = true;
-    }
-    for (const request of record.requests) {
-      if (request.status === 'ready' && !request.validatedAt) {
-        request.status = 'requested';
-        request.note = `Disponibilité à reconfirmer par le service responsable. ${request.note}`.trim();
-        changed = true;
-      }
-    }
-    return changed;
-  });
-  migrateRecords('prototype-role-content-v1', (record) => {
-    let changed = false;
-    const finalTask = record.tasks.find((task) => task.id === 'task-j30-3');
-    if (finalTask?.category === 'admin' && finalTask.title === 'Célébration du 1er Mois & Clôture de l’Onboarding') {
-      finalTask.category = 'team';
-      finalTask.description = 'Faire le bilan d’intégration avec ton manager, définir les prochaines étapes et célébrer avec l’équipe. 🎉';
-      changed = true;
-    }
-    const badgeTask = record.tasks.find((task) => task.id === 'task-j1-5');
-    if (badgeTask?.description.includes('Julie aux RH')) {
-      badgeTask.description = 'Contacter les RH pour valider ton badge physique et mettre à jour ta photo de profil.';
-      changed = true;
-    }
-    return changed;
-  });
 
   globalDb.dataInsightOnboardingDbV3 = { path, connection: db };
   return db;
@@ -325,15 +265,13 @@ export async function recordById(id: string): Promise<OnboardingRecord> {
   return JSON.parse(row.data) as OnboardingRecord;
 }
 export function authorize(account: Account, record: OnboardingRecord) {
-  const allowed =
-    account.appRole === 'admin' || account.appRole === 'rh'
-      ? true
+  if (
+    account.appRole === 'admin'
+      ? false
       : account.appRole === 'manager'
-        ? record.managerId === account.id
-        : account.appRole === 'it'
-          ? record.requests.some((request) => request.owner === 'IT')
-          : record.employee.id === account.id;
-  if (!allowed)
+        ? record.managerId !== account.id
+        : record.employee.id !== account.id
+  )
     throw new HttpError(403, 'Ce dossier ne fait pas partie de votre espace.');
 }
 export function visibleRecord(
@@ -343,45 +281,13 @@ export function visibleRecord(
   const result = structuredClone(record);
   // Non-employee portals receive document status only, never signature images.
   if (account.appRole !== 'employee') delete result.employee.signatureImage;
-  const buddy = BUDDIES_DATA[result.employee.buddyId];
-  const buddyTask = result.tasks.find((task) => task.id === 'task-j1-3');
-  if (buddyTask && ['Café d’accueil avec Camille (Ton Buddy)', 'Café d’accueil avec ton buddy'].includes(buddyTask.title))
-    buddyTask.title = buddy ? `Café d’accueil avec ${buddy.name}` : 'Café d’accueil avec ton buddy';
-  if (account.appRole === 'employee') {
-    const reminders = automaticReminders(result);
-    const read = new Set<string>(supabaseIsConfigured() ? [] :
-      database().prepare('SELECT notification_id FROM notification_reads WHERE account_id = ?')
-        .all(account.id).map((row) => (row as { notification_id: string }).notification_id));
-    result.notifications = [...reminders.map((notification) => ({ ...notification, read: read.has(notification.id) })), ...result.notifications];
-  }
-  if (account.appRole === 'rh' || account.appRole === 'it') {
-    result.goals = [];
-    result.meetings = [];
-    result.feedback = null;
-    result.blockers = [];
-    result.notifications = [];
-    result.activity = [];
-    result.welcome = { host: '', location: record.welcome.location, time: '', message: '' };
-    result.employee.buddyId = '';
-    if (account.appRole === 'it') {
-      result.requests = result.requests.filter((request) => request.owner === 'IT');
-      result.documents = [];
-      result.tasks = [];
-      result.employee.completedTaskIds = [];
-      result.employee.contractSigned = false;
-      delete result.employee.signatureDate;
-    } else {
-      result.tasks = result.tasks.filter((task) => task.category === 'admin');
-      result.employee.completedTaskIds = result.employee.completedTaskIds.filter((id) => result.tasks.some((task) => task.id === id));
-    }
-  }
   return result;
 }
 export async function recordsFor(account: Account): Promise<OnboardingRecord[]> {
   if (supabaseIsConfigured()) {
     const client = supabaseAdmin();
     let query = client.from('onboarding_records').select('*, employees(*)');
-    query = account.appRole === 'admin' || account.appRole === 'rh' || account.appRole === 'it'
+    query = account.appRole === 'admin'
       ? query
       : account.appRole === 'manager'
         ? query.eq('manager_id', account.id)
@@ -394,28 +300,10 @@ export async function recordsFor(account: Account): Promise<OnboardingRecord[]> 
       : { data: [], error: null };
     throwSupabase(signatures.error);
     const byEmployee = new Map((signatures.data || []).map((row) => [row.employee_id, row]));
-    const visible = (data || [])
-      .map((row) => remoteRecord(row, byEmployee.get(row.employee_id)))
-      .filter((record) => account.appRole !== 'it' || record.requests.some((request) => request.owner === 'IT'))
-      .map((record) => visibleRecord(account, record));
-    if (account.appRole === 'employee') {
-      const { data: readRows, error: readError } = await client.from('notification_reads')
-        .select('notification_id').eq('account_id', account.id);
-      throwSupabase(readError);
-      const read = new Set((readRows || []).map((row) => row.notification_id));
-      return visible.map((record) => ({
-        ...record,
-        notifications: record.notifications.map((notification) =>
-          notification.source === 'automatic'
-            ? { ...notification, read: read.has(notification.id) }
-            : notification
-        ),
-      }));
-    }
-    return visible;
+    return (data || []).map((row) => visibleRecord(account, remoteRecord(row, byEmployee.get(row.employee_id))));
   }
   const rows =
-    account.appRole === 'admin' || account.appRole === 'rh' || account.appRole === 'it'
+    account.appRole === 'admin'
       ? database()
           .prepare('SELECT data FROM onboardings ORDER BY id')
           .all()
@@ -428,10 +316,9 @@ export async function recordsFor(account: Account): Promise<OnboardingRecord[]> 
         : database()
           .prepare('SELECT data FROM onboardings WHERE id = ?')
           .all(account.id);
-  return rows
-    .map((row) => JSON.parse((row as { data: string }).data) as OnboardingRecord)
-    .filter((record) => account.appRole !== 'it' || record.requests.some((request) => request.owner === 'IT'))
-    .map((record) => visibleRecord(account, record));
+  return rows.map((row) =>
+    visibleRecord(account, JSON.parse((row as { data: string }).data))
+  );
 }
 export async function saveRecord(record: OnboardingRecord, expectedVersion: number) {
   if (supabaseIsConfigured()) {
@@ -493,8 +380,6 @@ function hash(value: string) {
   return createHash('sha256').update(value).digest('hex');
 }
 export async function createSession(email: string) {
-  if (process.env.DEMO_ACCESS_ENABLED === 'false')
-    throw new HttpError(503, 'Les accès de démonstration sont désactivés.');
   if (supabaseIsConfigured()) {
     const client = supabaseAdmin();
     const adminResult = await client.from('admins').select('*').eq('email', email).maybeSingle();
@@ -522,7 +407,6 @@ export async function createSession(email: string) {
   }
   const account =
     MOCK_ADMINS.find((candidate) => candidate.email === email) ||
-    MOCK_SERVICES.find((candidate) => candidate.email === email) ||
     MOCK_MANAGERS.find((candidate) => candidate.email === email) ||
     LUCCA_MOCK_DIRECTORY.find((person) => person.email === email);
   if (!account)
@@ -538,7 +422,7 @@ export async function createSession(email: string) {
   return token;
 }
 export async function sessionAccount(token: string | undefined): Promise<Account | null> {
-  if (!token || process.env.DEMO_ACCESS_ENABLED === 'false') return null;
+  if (!token) return null;
   if (supabaseIsConfigured()) {
     const client = supabaseAdmin();
     const { data: session, error } = await client.from('app_sessions').select('account_id').eq('token_hash', hash(token)).gt('expires_at', new Date().toISOString()).maybeSingle();
@@ -548,7 +432,7 @@ export async function sessionAccount(token: string | undefined): Promise<Account
     throwSupabase(adminError);
     if (admin) return {
       id: admin.id,
-      appRole: admin.app_role === 'rh' || admin.app_role === 'it' ? admin.app_role : 'admin',
+      appRole: 'admin',
       firstName: admin.first_name,
       lastName: admin.last_name,
       email: admin.email,
@@ -595,8 +479,6 @@ export async function sessionAccount(token: string | undefined): Promise<Account
   if (manager) return manager;
   const admin = MOCK_ADMINS.find((candidate) => candidate.id === row.account_id);
   if (admin) return admin;
-  const service = MOCK_SERVICES.find((candidate) => candidate.id === row.account_id);
-  if (service) return service;
   const record = database()
     .prepare('SELECT data FROM onboardings WHERE id = ?')
     .get(row.account_id) as { data: string } | undefined;
@@ -612,18 +494,4 @@ export async function deleteSession(token: string | undefined) {
     database()
       .prepare('DELETE FROM sessions WHERE token_hash = ?')
       .run(hash(token));
-}
-
-export async function markAutomaticReminderRead(account: Account, record: OnboardingRecord, id: string) {
-  if (!automaticReminders(record).some((notification) => notification.id === id))
-    throw new HttpError(404, 'Rappel introuvable.');
-  if (supabaseIsConfigured()) {
-    const { error } = await supabaseAdmin().from('notification_reads').upsert({
-      account_id: account.id,
-      notification_id: id,
-    });
-    throwSupabase(error);
-    return;
-  }
-  database().prepare('INSERT OR IGNORE INTO notification_reads VALUES (?, ?)').run(account.id, id);
 }
