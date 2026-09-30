@@ -9,7 +9,7 @@ export async function PATCH(
     const account = await requireAccount();
     const body = await readBody(request);
     const { id } = await context.params;
-    return Response.json(applyAction(account, id, body), {
+    return Response.json(await applyAction(account, id, body), {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

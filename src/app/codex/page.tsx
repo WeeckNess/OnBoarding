@@ -93,7 +93,7 @@ export default function CodexPage() {
             onClick={() => setSelectedCategory(cat.id)}
             className={`px-4 py-2.5 rounded-2xl font-bold whitespace-nowrap border transition-all cursor-pointer ${
               selectedCategory === cat.id
-                ? 'bg-brand-500 text-carbon-950 border-brand-400 shadow-md shadow-brand-500/20'
+                ? 'bg-zinc-100 text-carbon-950 border-brand-400 shadow-md'
                 : 'bg-carbon-850 border-white/5 text-slate-300 hover:bg-carbon-800'
             }`}
           >

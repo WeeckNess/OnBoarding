@@ -1,78 +1,39 @@
-# DataInsight × Midi Agency — Onboarding MVP
+# Data Insight · Parcours d’intégration
 
-Portail manager et parcours collaborateur, construits avec Next.js 15, React 19, TypeScript et Tailwind. Le MVP couvre la préparation avant arrivée, J1, les premières semaines et le suivi J+30.
+Application Next.js réunissant l’espace salarié et le portail manager. Le répertoire RH Lucca reste fictif. Le serveur utilise Supabase lorsque `SUPABASE_URL` et `SUPABASE_SECRET_KEY` sont définies dans `.env.local`; sans ces clés, il utilise SQLite localement. Le projet Supabase lié contient déjà le schéma et les 50 dossiers fictifs.
 
-## Lancer le projet
+## Lancer l’application
 
-Utiliser Node 22.13+ (branche 22) ou Node 24+. SQLite est fourni par Node (`node:sqlite`) : aucun serveur de base de données ni abonnement externe n’est nécessaire.
+Pré-requis : Node.js 22.13+ ou 24+.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Ouvrir http://localhost:3000 et choisir un profil. Les données sont initialisées au premier accès, puis conservées dans `.data/onboarding.sqlite` (ignoré par Git). Les profils existants du prototype sont fictifs ; dates, métiers et contenu de la documentation sont des données de démonstration.
+Ouvrir http://localhost:3000 et saisir manuellement l’adresse email associée à une fiche. Les profils managers sont listés dans [la documentation technique](docs/INTEGRATION_LUCCA_SUPABASE.md). Les adresses des 50 salariés sont générées dans `src/lib/integrations/lucca/mockDirectory.ts` et utilisent le domaine réservé `.example`.
 
-| Profil | Accès | Dossiers visibles |
-| --- | --- | --- |
-| Antoine Laurent — `antoine.laurent@datainsight.io` | Manager | Alexandre Moreau, Sarah Benali |
-| Claire Vasseur — `claire.vasseur@datainsight.io` | Manager | Thomas Legros |
-| Alexandre Moreau — `alexandre.moreau@datainsight.io` | Collaborateur | Son propre parcours |
-| Thomas Legros — `thomas.legros@datainsight.io` | Collaborateur | Son propre parcours |
-| Sarah Benali — `sarah.benali@datainsight.io` | Collaborateur | Son propre parcours |
+Sans identifiants Supabase, au premier accès, l’annuaire simulé charge 50 personnes et crée leurs dossiers d’intégration dans `.data/onboarding-supabase-mock.sqlite`. Les dossiers restent partagés entre les espaces manager et salarié. La base précédente, `.data/onboarding.sqlite`, n’est pas modifiée.
 
-## Parcours manager
+## Parcours
 
-Les deux rôles partagent la sidebar Arc et les styles du parcours collaborateur : panneaux translucides, accents dorés, cartes et formulaires. Le menu est repliable sur ordinateur et utilisable au clavier sur mobile. Les tâches du manager sont regroupées par étape et filtrables par responsable.
+- Les managers voient les dossiers qui leur sont affectés, préparent l’accueil, les accès, le matériel, les tâches, les objectifs et les points d’étape.
+- Les salariés retrouvent la préparation, leur feuille de route, les documents, les ressources et les échanges avec leur manager.
+- La projection de l’annuaire part de 50 personnes et vise 70 personnes au 31 décembre 2027.
 
-- `/manager` : arrivées de l’équipe, filtres, recherche, préparation de J1 et alertes de blocage/retard. Une checklist complétée ne signifie pas que tous les accès sont prêts.
-- `/manager/[id]` : accueil, buddy et message de bienvenue ; demandes structurées de matériel et d’accès ; attribution et adaptation des tâches ; objectifs ; état des documents ; points J1/J+7/J+30 et comptes rendus ; feedback ; résolution des blocages ; rappels dans l’application ; historique des actions.
-- Les demandes ont un responsable, une échéance, un statut et un indicateur « indispensable à J1 ». Leur traitement est suivi manuellement : aucune commande fournisseur ni création de compte IT n’est exécutée.
-- Les RH restent responsables de créer les arrivées et des documents administratifs. Le portail RH et un portail IT ne sont pas implémentés dans ce lot.
+## Stockage et intégration simulée
 
-## Parcours collaborateur et partage
+`src/lib/integrations/lucca/mockDirectory.ts` fournit les fiches RH fictives. Le serveur les importe une fois dans `lucca_mock_people`, puis initialise les dossiers manager/salarié correspondants. Le parcours est conservé dans SQLite en mode local.
 
-Le dashboard, la roadmap, les documents, le Codex, le buddy et le tutoriel existants sont conservés. `/arrival` présente les informations préparées par le manager, les objectifs et comptes rendus, et permet de signaler un blocage ou partager son ressenti. Le choix du buddy est commun aux deux espaces.
+Le schéma Supabase et les 50 fiches initiales sont dans `supabase/migrations/` et `supabase/seed.sql`. Le schéma et le jeu initial ont été appliqués au projet Supabase lié. L’adaptateur serveur persiste les dossiers, les signatures et les sessions dans cette base. La clé secrète reste côté serveur et n’est jamais exposée au navigateur. Pour une nouvelle instance, renseigner `.env.local`, puis appliquer la migration et le seed selon les étapes de la documentation technique.
 
-Une tâche apparaît dans la roadmap de son collaborateur dès qu’elle lui est attribuée. Seul le responsable d’une tâche peut la terminer. Les signatures de démonstration mettent à jour le statut des documents côté manager ; cocher une tâche ne peut pas signer un document. Le manager ne reçoit pas l’image de signature.
+Les choix d’architecture, le mapping des champs, le modèle de synchronisation et les étapes nécessaires pour remplacer le faux connecteur figurent dans [docs/INTEGRATION_LUCCA_SUPABASE.md](docs/INTEGRATION_LUCCA_SUPABASE.md).
 
-Les mutations sont enregistrées immédiatement. Les autres sessions rechargent leurs données toutes les 10 secondes lorsqu’elles sont visibles, au retour sur la fenêtre et via « Actualiser ». Le bouton Reset de l’entrant réinitialise uniquement sa progression et sa signature, en conservant la préparation manager et les autres profils. L’ancien localStorage métier n’est pas importé : il ne permettait pas d’isoler correctement les profils. Il ne sert plus qu’au tutoriel.
+## Portails
 
-## Architecture et limites du MVP
+- `/manager` : vue manager filtrée par équipe.
+- `/manager/[id]` : préparation et suivi d’un salarié.
+- `/arrival` : informations d’arrivée préparées par le manager.
+- `/dashboard`, `/roadmap`, `/contracts`, `/buddy`, `/codex`, `/elearning` : espace salarié.
 
-Les vues passent par un contexte React commun, qui consomme les routes API Next exécutées côté Node. SQLite contient un dossier versionné par collaborateur et les sessions. Chaque mutation est validée et autorisée côté serveur, appliquée avec un contrôle de version atomique et ajoutée à l’historique du dossier. Une écriture concurrente reçoit une erreur 409 ; le formulaire conserve la saisie et invite à rouvrir la dernière version plutôt que d’écraser une modification.
-
-Les sessions utilisent des jetons aléatoires stockés sous forme de hash en base et un cookie HttpOnly/SameSite valable 8 heures. Les écritures JSON vérifient l’origine de la requête. Les managers n’accèdent qu’à leurs dossiers ; les collaborateurs à leur propre dossier.
-
-**L’identification est volontairement une sélection de profils de démonstration sans mot de passe.** Ce n’est pas une authentification de production : toute personne qui accède au prototype peut choisir un profil proposé. Ne pas y saisir de données personnelles réelles. `DEMO_ACCESS_ENABLED=false` désactive ces accès. Il faudra connecter une authentification réelle et un annuaire de rôles avant tout usage réel.
-
-La signature contrat/NDA est une simulation commune aux deux documents, sans certification ni service de signature externe. Les rappels sont internes à l’application, sans email ni Slack. L’historique porte sur les modifications, pas sur tous les accès. Sauvegardes, politique de conservation, hébergement, validation RGPD et intégrations restent à traiter pour un déploiement réel.
-
-### Hébergement
-
-SQLite requiert un **serveur Node avec un disque persistant**, en instance unique pour ce MVP. Le stockage local ne convient pas aux fonctions serverless éphémères ni à plusieurs instances avec des disques séparés. Ne pas déployer ce projet tel quel sur un hébergement de ce type ; remplacer l’adaptateur par une base partagée si nécessaire.
-
-Variables facultatives :
-
-- `ONBOARDING_DB_PATH` : chemin du fichier SQLite (défaut `.data/onboarding.sqlite`).
-- `APP_ORIGIN` : origine publique exacte, ex. `https://demo.example.com`, pour le contrôle des écritures derrière un reverse proxy. Sans cette variable, l’origine est reconstruite à partir du protocole de la requête et de son en-tête Host.
-- `DEMO_ACCESS_ENABLED=false` : ferme l’accès aux profils de démo et invalide leur utilisation.
-
-Le module natif SQLite est encore signalé expérimental par les versions Node utilisées ici. Références : [Node SQLite](https://nodejs.org/api/sqlite.html), [cookies Next.js](https://nextjs.org/docs/app/api-reference/functions/cookies).
-
-## Vérifier
-
-```sh
-npm run typecheck
-npm run build
-npm test
-```
-
-Ne pas lancer `next dev` pendant `next build`/`npm test` dans le même checkout : ils partagent `.next`. Les tests lancent un serveur Next de production sur un port libre et une base temporaire supprimée à la fin. Ils vérifient les droits, les entrées invalides, la protection d’origine, le partage entre profils, la signature, les conflits d’écriture, le reset, la déconnexion et la persistance après redémarrage.
-
-## Scénario de démonstration
-
-1. Ouvrir Antoine, puis le dossier Alexandre. Organiser l’accueil et compléter le périmètre de la demande VPN ; ajouter une tâche collaborateur et un objectif.
-2. Ouvrir Alexandre dans un autre navigateur ou une fenêtre privée. Consulter « Mon arrivée & mon suivi » et la roadmap ; terminer la tâche, signaler un blocage et partager un ressenti.
-3. Revenir à Antoine, actualiser et consulter « Suivi & feedback ». Apporter une solution au blocage et renseigner un point d’étape ; Alexandre retrouve la réponse et le compte rendu.
-4. Vérifier que Claire ne voit que Thomas et que les documents d’Alexandre sont suivis en lecture seule par son manager.
+Les mutations sont validées et autorisées côté serveur. Les sessions utilisent un cookie HttpOnly et expirent après huit heures. À la première connexion, chaque compte doit créer un mot de passe de 12 caractères minimum ; les mots de passe sont hachés avec scrypt et un sel aléatoire. Ils peuvent être modifiés dans « Compte & sécurité ». Les emails `.example` restent des identifiants fictifs non vérifiés : le premier choix du mot de passe ne remplace pas une invitation ou une vérification d’adresse pour un déploiement réel. La signature est une simulation sans prestataire externe.

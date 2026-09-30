@@ -172,7 +172,7 @@ export default function TourPopover({
             {/* En-tête */}
             <div className="relative flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-carbon-950 shadow-lg shadow-brand-500/30 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-carbon-950 shadow-lg shrink-0">
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
@@ -206,7 +206,7 @@ export default function TourPopover({
                 >
                   <span className="relative w-full h-1 rounded-full bg-white/10 overflow-hidden group-hover:bg-white/20 transition-colors">
                     {i < index && <span className="absolute inset-0 bg-brand-500/70" />}
-                    {i === index && <span className="tour-fill absolute inset-0 bg-gradient-to-r from-brand-500 to-brand-300" />}
+                    {i === index && <span className="tour-fill absolute inset-0 bg-zinc-100" />}
                   </span>
                 </button>
               ))}
@@ -230,7 +230,7 @@ export default function TourPopover({
                 <button
                   ref={nextRef}
                   onClick={onNext}
-                  className="h-9 px-4 rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-brand-500/25 hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-900"
+                  className="h-9 px-4 rounded-xl bg-zinc-100 text-carbon-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-900"
                 >
                   <span>{isLast ? 'Terminer' : 'Suivant'}</span>
                   {isLast ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}

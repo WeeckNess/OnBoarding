@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/onboarding';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ProgressBar from '@/components/ProgressBar';
+import CoffeeBookingModal from '@/components/CoffeeBookingModal';
 import { 
   Sparkles, 
   MapPin, 
@@ -26,15 +27,19 @@ export default function DashboardPage() {
   const { 
     currentUser, 
     currentBuddy, 
+    currentRecord,
+    mutate,
+    saving,
     tasks, 
     completedTaskIds, 
     toggleTask,
     progressPercentage
   } = useOnboarding();
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const employeeName = currentUser 
     ? `${currentUser.firstName} ${currentUser.lastName}` 
-    : 'Alexandre Moreau';
+    : 'Collaborateur';
   const role = currentUser?.role || 'Data Engineer Junior';
   const department = currentUser?.department || 'Data Platform';
   const contractSigned = Boolean(currentUser?.contractSigned);
@@ -56,7 +61,7 @@ export default function DashboardPage() {
               <span>Espace Salarié • Jour 1</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Ravi de t’accueillir, <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">{employeeName}</span> ! 👋
+              Ravi de t’accueillir, <span className="text-white">{employeeName}</span> ! 👋
             </h1>
             <p className="text-sm text-slate-300 max-w-2xl">
               Bienvenue chez <strong>Data Insight</strong> au sein de l’équipe <strong>{department}</strong>. Ton parcours d’intégration est prêt.
@@ -241,7 +246,7 @@ export default function DashboardPage() {
                       {task.actionUrl && (
                         <Link
                           href={task.actionUrl}
-                          className="shrink-0 text-[11px] px-3 py-1.5 rounded-xl bg-carbon-900 hover:bg-brand-500 hover:text-carbon-950 text-slate-200 border border-white/5 font-bold transition-all hidden sm:inline-flex items-center gap-1"
+                          className="shrink-0 text-[11px] px-3 py-1.5 rounded-xl bg-carbon-900 hover:bg-zinc-100 hover:text-carbon-950 text-slate-200 border border-white/5 font-bold transition-all hidden sm:inline-flex items-center gap-1"
                         >
                           <span>{task.actionLabel || 'Ouvrir'}</span>
                           <ExternalLink className="w-3 h-3 text-slate-400" />
@@ -306,24 +311,21 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <a
-                    href={`https://slack.com/app_redirect?channel=${currentBuddy.slackHandle}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`mailto:${currentBuddy.email}`}
                     className="py-2.5 px-3 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-white font-semibold border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
                     <MessageSquare className="w-3.5 h-3.5 text-brand-400" />
-                    <span>Slack direct</span>
+                    <span>Messagerie</span>
                   </a>
 
-                  <a
-                    href={currentBuddy.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-brand-500/20 cursor-pointer hover:opacity-95"
+                  <button
+                    type="button"
+                    onClick={() => setBookingOpen(true)}
+                    className="py-2.5 px-3 rounded-xl bg-zinc-100 text-carbon-950 font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer hover:opacity-95"
                   >
                     <Coffee className="w-3.5 h-3.5 text-carbon-950" />
                     <span>Café d’accueil</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             )}
@@ -337,6 +339,17 @@ export default function DashboardPage() {
 
       </div>
 
+      {bookingOpen && currentRecord && currentBuddy && <CoffeeBookingModal
+        record={currentRecord}
+        buddyName={currentBuddy.name}
+        saving={saving}
+        onClose={() => setBookingOpen(false)}
+        onReserve={async (time) => {
+          const success = await mutate(currentRecord.employee.id, { type: 'coffee.reserve', time });
+          if (success) setBookingOpen(false);
+          return success;
+        }}
+      />}
     </div>
   );
 }

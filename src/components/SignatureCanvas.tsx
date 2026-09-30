@@ -27,7 +27,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
     canvas.height = rect.height * 2;
     ctx.scale(2, 2);
 
-    ctx.strokeStyle = '#DEAF4A';
+    ctx.strokeStyle = '#E4E4E7';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -107,7 +107,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
 
     if (name.trim()) {
       ctx.font = 'italic 32px "Caveat", "Brush Script MT", cursive, sans-serif';
-      ctx.fillStyle = '#DEAF4A';
+      ctx.fillStyle = '#E4E4E7';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(name, rect.width / 2, rect.height / 2);
@@ -129,7 +129,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
             onClick={() => setMode('draw')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               mode === 'draw'
-                ? 'bg-brand-500 text-carbon-950 font-bold shadow-sm'
+                ? 'bg-zinc-100 text-carbon-950 font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -141,7 +141,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
             onClick={() => setMode('type')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               mode === 'type'
-                ? 'bg-brand-500 text-carbon-950 font-bold shadow-sm'
+                ? 'bg-zinc-100 text-carbon-950 font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >

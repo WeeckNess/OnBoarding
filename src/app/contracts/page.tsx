@@ -30,7 +30,7 @@ export default function ContractsPage() {
       particleCount: 90,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#DEAF4A', '#E8BC60', '#F6E1B6', '#F59E0B', '#34D399']
+      colors: ['#FFFFFF', '#E4E4E7', '#A1A1AA', '#E4E4E7', '#34D399']
     });
   };
 
@@ -53,8 +53,8 @@ export default function ContractsPage() {
 
   const employeeName = currentUser 
     ? `${currentUser.firstName} ${currentUser.lastName}` 
-    : 'Alexandre Moreau';
-  const employeeEmail = currentUser?.email || 'alexandre.moreau@datainsight.io';
+    : 'Collaborateur';
+  const employeeEmail = currentUser?.email || 'lea.martin.01@datainsight.example';
   const employeeRole = currentUser?.role || 'Data Engineer Junior';
   const employeeDept = currentUser?.department || 'Data Platform';
 
@@ -93,7 +93,7 @@ export default function ContractsPage() {
           onClick={() => setActiveTab('contract')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'contract'
-              ? 'bg-brand-500 text-carbon-950 shadow-md shadow-brand-500/20'
+              ? 'bg-zinc-100 text-carbon-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -104,7 +104,7 @@ export default function ContractsPage() {
           onClick={() => setActiveTab('nda')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'nda'
-              ? 'bg-brand-500 text-carbon-950 shadow-md shadow-brand-500/20'
+              ? 'bg-zinc-100 text-carbon-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -121,7 +121,7 @@ export default function ContractsPage() {
           
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center font-bold text-carbon-950 text-xs">
+              <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center font-bold text-carbon-950 text-xs">
                 DI
               </div>
               <span className="font-bold text-white text-sm">DATA INSIGHT SAS</span>
@@ -204,7 +204,7 @@ export default function ContractsPage() {
               <div>
                 <span className="text-[10px] text-slate-400 block font-mono">Signé électroniquement par :</span>
                 <span className="font-bold text-brand-400 text-sm">{employeeName}</span>
-                <span className="text-[10px] text-slate-500 block">Enregistrement de démonstration Data Insight</span>
+                <span className="text-[10px] text-slate-500 block">Enregistrement Data Insight</span>
               </div>
               <div className="w-32 h-12 bg-carbon-900 rounded-xl flex items-center justify-center border border-white/10 overflow-hidden">
                 {currentUser?.signatureImage || signatureData ? (
@@ -237,7 +237,7 @@ export default function ContractsPage() {
                     <span>Contrat validé et signé !</span>
                   </div>
                   <p>
-                    Votre signature de démonstration est enregistrée et le statut est visible par votre manager. Vous pouvez imprimer cette page ou poursuivre votre parcours.
+                    Votre signature est enregistrée et son statut est visible par votre manager. Vous pouvez imprimer cette page ou poursuivre votre parcours.
                   </p>
                 </div>
 
@@ -252,7 +252,7 @@ export default function ContractsPage() {
 
                   <button
                     onClick={() => router.push('/dashboard')}
-                    className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold text-sm shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3.5 px-6 rounded-2xl bg-zinc-100 text-carbon-950 font-extrabold text-sm shadow-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>Accéder à mon Dashboard Onboarding</span>
                     <ArrowRight className="w-4 h-4 text-carbon-950" />
@@ -270,7 +270,7 @@ export default function ContractsPage() {
                   type="button"
                   disabled={!signatureData || isSubmitting}
                   onClick={handleConfirmSignature}
-                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold text-sm shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
+                  className="w-full py-4 px-6 rounded-2xl bg-zinc-100 text-carbon-950 font-extrabold text-sm shadow-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <span>Horodatage et enregistrement...</span>

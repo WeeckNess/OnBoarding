@@ -1,52 +1,7 @@
-import { Employee, RoadmapMilestone, RoadmapTask, BuddyInfo, CodexArticle } from '@/types';
+import { RoadmapMilestone, RoadmapTask, BuddyInfo, CodexArticle } from '@/types';
 
 /** Tâche validée uniquement par la signature électronique du contrat. */
 export const CONTRACT_TASK_ID = 'task-j1-1';
-
-export const INITIAL_EMPLOYEES: Employee[] = [
-  {
-    id: 'emp-01',
-    firstName: 'Alexandre',
-    lastName: 'Moreau',
-    email: 'alexandre.moreau@datainsight.io',
-    role: 'Data Engineer Junior',
-    department: 'Data Platform',
-    startDate: '2026-10-01',
-    contractSigned: false,
-    buddyId: 'buddy-camille',
-    managerName: 'Antoine Laurent (Head of Data)',
-    completedTaskIds: [],
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'emp-02',
-    firstName: 'Thomas',
-    lastName: 'Legros',
-    email: 'thomas.legros@datainsight.io',
-    role: 'Full Stack & Data Developer',
-    department: 'Data Applications',
-    startDate: '2026-10-01',
-    contractSigned: false,
-    buddyId: 'buddy-camille',
-    managerName: 'Claire Vasseur (VP Engineering)',
-    completedTaskIds: [],
-    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'emp-03',
-    firstName: 'Sarah',
-    lastName: 'Benali',
-    email: 'sarah.benali@datainsight.io',
-    role: 'Analytics Engineer',
-    department: 'Data Analytics',
-    startDate: '2026-10-05',
-    contractSigned: false,
-    buddyId: 'buddy-julien',
-    managerName: 'Antoine Laurent (Head of Data)',
-    completedTaskIds: [],
-    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-  }
-];
 
 export const BUDDIES_DATA: Record<string, BuddyInfo> = {
   'buddy-camille': {
@@ -54,7 +9,7 @@ export const BUDDIES_DATA: Record<string, BuddyInfo> = {
     name: 'Camille Reynaud',
     role: 'Senior Data Engineer & Team Lead',
     department: 'Data Platform',
-    email: 'camille.reynaud@datainsight.io',
+    email: 'camille.reynaud@datainsight.example',
     slackHandle: '@camille.data',
     phone: '+33 6 42 18 90 23',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
@@ -97,7 +52,7 @@ export const BUDDIES_DATA: Record<string, BuddyInfo> = {
     name: 'Julien Mercier',
     role: 'Lead Analytics Engineer',
     department: 'Data Analytics',
-    email: 'julien.mercier@datainsight.io',
+    email: 'julien.mercier@datainsight.example',
     slackHandle: '@julien.mercier',
     phone: '+33 6 78 92 11 04',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
@@ -380,7 +335,6 @@ export const CODEX_ARTICLES: CodexArticle[] = [
     ],
     usefulLinks: [
       { label: 'Site officiel Data Insight', url: 'https://datainsight.io' },
-      { label: 'Plateforme Midi Agency (Partenaire Onboarding)', url: 'https://midiagency.fr' }
     ]
   },
   {

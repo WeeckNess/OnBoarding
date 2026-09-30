@@ -7,9 +7,9 @@ export async function POST(request: Request) {
     const body = await readBody(request);
     if (!body || typeof body.email !== 'string' || body.email.length > 254)
       throw new HttpError(400, 'Adresse email invalide.');
-    const token = createSession(body.email.trim().toLowerCase());
+    const token = await createSession(body.email.trim().toLowerCase());
     const jar = await cookies();
-    deleteSession(jar.get(SESSION_COOKIE)?.value);
+    await deleteSession(jar.get(SESSION_COOKIE)?.value);
     jar.set(SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -27,7 +27,7 @@ export async function DELETE(request: Request) {
   try {
     await readBody(request);
     const jar = await cookies();
-    deleteSession(jar.get(SESSION_COOKIE)?.value);
+    await deleteSession(jar.get(SESSION_COOKIE)?.value);
     jar.delete(SESSION_COOKIE);
     return Response.json({ success: true });
   } catch (error) {

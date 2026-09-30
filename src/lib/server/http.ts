@@ -1,14 +1,14 @@
 import { cookies } from 'next/headers';
 import { HttpError, sessionAccount } from './store';
 
-export const SESSION_COOKIE = 'midi_demo_session';
+export const SESSION_COOKIE = 'data_insight_session';
 export async function getAccount() {
   return sessionAccount((await cookies()).get(SESSION_COOKIE)?.value);
 }
 export async function requireAccount() {
   const account = await getAccount();
   if (!account)
-    throw new HttpError(401, 'Connectez-vous à un profil de démonstration.');
+    throw new HttpError(401, 'Connectez-vous avec votre adresse email professionnelle.');
   return account;
 }
 export async function readBody(request: Request) {
@@ -34,7 +34,10 @@ export async function readBody(request: Request) {
 }
 export function errorResponse(error: unknown) {
   if (error instanceof HttpError)
-    return Response.json({ error: error.message }, { status: error.status });
+    return Response.json(
+      { error: error.message, ...(error.code ? { code: error.code } : {}) },
+      { status: error.status }
+    );
   console.error('Onboarding API error', error);
   return Response.json(
     { error: 'Enregistrement indisponible. Réessayez.' },

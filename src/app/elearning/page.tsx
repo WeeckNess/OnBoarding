@@ -191,7 +191,7 @@ export default function ElearningPage() {
                   </div>
 
                   <div className="mt-5 grid grid-cols-2 gap-2">
-                    <button onClick={() => openModule(module.id, 'video')} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-brand-400">
+                    <button onClick={() => openModule(module.id, 'video')} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-100 px-3 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-zinc-100">
                       <Play className="h-3.5 w-3.5 fill-current" /> Voir la vidéo
                     </button>
                     <button onClick={() => openModule(module.id, 'quiz')} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:border-brand-500/30 hover:text-brand-300">
@@ -230,7 +230,7 @@ export default function ElearningPage() {
               <div className="space-y-3">
                 <p className="text-sm leading-relaxed text-slate-300">{selectedModule.description}</p>
                 <p className="text-xs leading-relaxed text-slate-500">Un module pour acquérir les repères essentiels et les appliquer dans tes missions au quotidien.</p>
-                <button onClick={() => markComplete(selectedModule.id)} className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-brand-400">
+                <button onClick={() => markComplete(selectedModule.id)} className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-4 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-zinc-100">
                   <Check className="h-4 w-4" /> {completedModules.includes(selectedModule.id) ? 'Module marqué comme vu' : 'Marquer comme vu'}
                 </button>
               </div>
@@ -267,12 +267,12 @@ export default function ElearningPage() {
               {quizSubmitted ? (
                 <div className="flex flex-col gap-3 rounded-2xl border border-brand-500/15 bg-brand-500/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-bold text-white">Résultat : <span className="text-brand-300">{correctAnswers}/{selectedModule.questions.length}</span><span className="ml-2 text-xs font-normal text-slate-400">{correctAnswers === selectedModule.questions.length ? 'Tout juste, bravo !' : 'Tu peux revoir les réponses ci-dessus.'}</span></p>
-                  {correctAnswers === selectedModule.questions.length && <button onClick={() => markComplete(selectedModule.id)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-brand-400"><Check className="h-4 w-4" /> Valider le module</button>}
+                  {correctAnswers === selectedModule.questions.length && <button onClick={() => markComplete(selectedModule.id)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-zinc-100"><Check className="h-4 w-4" /> Valider le module</button>}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-[11px] text-slate-500">Choisis une réponse par question pour voir ton résultat.</p>
-                  <button disabled={Object.keys(answers).length < selectedModule.questions.length} onClick={() => setQuizSubmitted(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-40">Voir mon résultat <ArrowRight className="h-3.5 w-3.5" /></button>
+                  <button disabled={Object.keys(answers).length < selectedModule.questions.length} onClick={() => setQuizSubmitted(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2.5 text-xs font-bold text-carbon-950 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40">Voir mon résultat <ArrowRight className="h-3.5 w-3.5" /></button>
                 </div>
               )}
             </div>

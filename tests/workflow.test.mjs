@@ -33,7 +33,6 @@ test(
         {
           env: {
             ...process.env,
-            DEMO_ACCESS_ENABLED: 'true',
             ONBOARDING_DB_PATH: join(directory, 'test.sqlite'),
             NEXT_TELEMETRY_DISABLED: '1',
           },
@@ -93,8 +92,17 @@ test(
         headers: response.headers,
       };
     };
+    const testPassword = 'M1di-Test-Password-2026!';
     const login = async (email) => {
-      const result = await request('/api/session', '', 'POST', { email });
+      let result = await request('/api/session', '', 'POST', { email, password: testPassword });
+      if (result.body.code === 'FIRST_LOGIN_REQUIRED') {
+        result = await request('/api/session', '', 'POST', {
+          email,
+          password: testPassword,
+          confirmPassword: testPassword,
+          firstLogin: true,
+        });
+      }
       assert.equal(result.status, 200);
       assert.match(result.headers.get('set-cookie'), /HttpOnly/i);
       return result.cookie;
@@ -110,9 +118,9 @@ test(
         action,
       });
     };
-    const manager = await login('antoine.laurent@datainsight.io');
-    const employee = await login('alexandre.moreau@datainsight.io');
-    const otherEmployee = await login('thomas.legros@datainsight.io');
+    const manager = await login('antoine.laurent@datainsight.example');
+    const employee = await login('lea.martin.01@datainsight.example');
+    const otherEmployee = await login('noe.durand.02@datainsight.example');
     await t.test(
       'anonymous access, manager scope and employee isolation',
       async () => {
@@ -120,7 +128,7 @@ test(
         assert.equal((await update('', { type: 'reset' })).status, 401);
         assert.deepEqual(
           (await workspace(manager)).records.map((r) => r.employee.id),
-          ['emp-01', 'emp-03']
+          ['emp-01', 'emp-06', 'emp-11', 'emp-16', 'emp-21', 'emp-26', 'emp-31', 'emp-36', 'emp-41', 'emp-46']
         );
         assert.deepEqual(
           (await workspace(employee)).records.map((r) => r.employee.id),
@@ -147,7 +155,7 @@ test(
               appRole: 'manager',
             })
           ).status,
-          400
+          404
         );
       }
     );

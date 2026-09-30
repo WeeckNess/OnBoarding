@@ -1,246 +1,119 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowRight, Loader2, Mail, User } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { INITIAL_EMPLOYEES } from '@/lib/mockData';
-import { DEMO_MANAGERS } from '@/lib/demoAccounts';
-import { ArrowRight, Database, User, Mail, Loader2 } from 'lucide-react';
 
 export default function WelcomePage() {
   const router = useRouter();
   const { loginUser, currentUser, isLoaded } = useOnboarding();
-
   const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
-  const [identifiedUser, setIdentifiedUser] = useState<
-    (typeof INITIAL_EMPLOYEES)[0] | null
-  >(null);
 
-  // If already logged in, immediately redirect to /dashboard
   useEffect(() => {
     if (isLoaded && currentUser) {
       router.replace(
-        currentUser.appRole === 'manager' ? '/manager' : '/dashboard'
+        currentUser.appRole === 'admin'
+          ? '/admin'
+          : currentUser.appRole === 'manager'
+            ? '/manager'
+            : '/dashboard'
       );
     }
   }, [currentUser, isLoaded, router]);
 
-  const handleEmailLookup = (inputEmail: string) => {
-    setEmail(inputEmail);
-    const match = INITIAL_EMPLOYEES.find(
-      (e) => e.email.toLowerCase() === inputEmail.trim().toLowerCase()
-    );
-    if (match) {
-      setFirstName(match.firstName);
-      setLastName(match.lastName);
-      setIdentifiedUser(match);
-    } else {
-      setIdentifiedUser(null);
-    }
-  };
-
-  const handleQuickSelect = (emp: (typeof INITIAL_EMPLOYEES)[0]) => {
-    setEmail(emp.email);
-    setFirstName(emp.firstName);
-    setLastName(emp.lastName);
-    setIdentifiedUser(emp);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!email.trim()) return;
-
     setLoading(true);
-    await loginUser(email, firstName, lastName);
+    setNotice('');
+    const result = await loginUser(email);
+    if (!result.success) {
+      setNotice(result.message || 'Connexion impossible.');
+    }
     setLoading(false);
   };
 
-  // Prevent flashing login form if already logged in
   if (currentUser) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
-        <p className="text-sm text-slate-300">
-          Redirection vers votre tableau de bord...
-        </p>
+      <div className="flex min-h-[50vh] flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
+        <p className="text-sm text-slate-300">Ouverture de votre espace…</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 py-4">
-      {/* Clean Hero Header */}
-      <div className="text-center space-y-3">
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+    <div className="mx-auto max-w-3xl space-y-8 py-4">
+      <div className="space-y-3 text-center">
+        <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
           Bienvenue chez Data Insight
         </h1>
-
-        <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
-          Choisissez un profil pour explorer le parcours collaborateur ou
-          piloter les arrivées de votre équipe.
+        <p className="mx-auto max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
+          Accédez à votre espace salarié, manager ou RH avec l’adresse associée à votre fiche.
         </p>
       </div>
 
-      <section
-        aria-label="Accès manager"
-        className="glass-panel p-6 rounded-3xl space-y-4"
-      >
-        <div>
-          <p className="text-xs uppercase tracking-widest text-brand-400 mb-2">
-            Espace manager
-          </p>
-          <h2 className="text-xl font-bold">
-            Préparer les arrivées de mon équipe
+      <section className="glass-panel relative space-y-8 overflow-hidden rounded-3xl border border-white/10 p-6 shadow-2xl sm:p-10">
+        <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-brand-500/10 blur-3xl" />
+        <div className="relative border-b border-white/10 pb-4">
+          <h2 className="flex items-center gap-2 text-base font-bold text-white sm:text-lg">
+            <User className="h-5 w-5 text-brand-400" />
+            Identification
           </h2>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {DEMO_MANAGERS.map((manager) => (
-            <button
-              key={manager.id}
-              disabled={loading}
-              onClick={async () => {
-                setLoading(true);
-                await loginUser(manager.email);
-                setLoading(false);
-              }}
-              className="text-left p-4 rounded-xl bg-brand-500/10 border border-brand-500/30 hover:bg-brand-500/20 disabled:opacity-50"
-            >
-              <strong className="block text-brand-300">
-                {manager.firstName} {manager.lastName} →
-              </strong>
-              <span className="text-sm text-slate-300">
-                {manager.department}
-              </span>
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-slate-400">
-          Démonstration avec profils fictifs, sans mot de passe. N’utilisez pas
-          de données personnelles réelles.
-        </p>
-      </section>
-      {/* Main Form Card */}
-      <div className="glass-panel p-6 sm:p-10 rounded-3xl space-y-8 relative overflow-hidden shadow-2xl border border-white/10">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="border-b border-white/10 pb-4">
-          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-            <User className="w-5 h-5 text-brand-400" />
-            <span>Identification du collaborateur</span>
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Sélectionnez un profil collaborateur pré-enregistré pour charger son
-            parcours.
+          <p className="mt-1 text-xs text-slate-400">
+            Saisissez votre adresse email professionnelle.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                Prénom
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Alexandre"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full bg-carbon-850 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                Nom
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Moreau"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full bg-carbon-850 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
-              />
-            </div>
-          </div>
-
+        <form onSubmit={handleSubmit} className="relative space-y-5">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label
+                htmlFor="work-email"
+                className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+              >
                 Adresse email
               </label>
-              {identifiedUser && (
-                <span className="flex items-center gap-1 text-[11px] text-brand-300 font-medium">
-                  <Database className="w-3 h-3 text-brand-400" /> Profil salarié trouvé
-                </span>
-              )}
             </div>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
+              <Mail className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
               <input
+                id="work-email"
                 type="email"
+                autoComplete="username"
                 required
-                placeholder="alexandre.moreau@datainsight.io"
+                placeholder="prenom.nom@datainsight.example"
                 value={email}
-                onChange={(e) => handleEmailLookup(e.target.value)}
-                className="w-full bg-carbon-850 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
+                onChange={(event) => setEmail(event.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-carbon-850 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-500 transition-colors focus:border-brand-500 focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Quick Demo Pre-filled profiles */}
-          <div className="bg-carbon-900/90 p-4 rounded-2xl border border-white/5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold text-slate-300">
-                💡 Profils de test pré-enregistrés :
-              </span>
-              <span className="text-[11px] text-brand-400 font-medium">
-                Cliquez pour tester
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {INITIAL_EMPLOYEES.map((emp) => (
-                <button
-                  key={emp.id}
-                  type="button"
-                  onClick={() => handleQuickSelect(emp)}
-                  className={`text-left p-3 rounded-xl border text-xs transition-all cursor-pointer ${
-                    email.toLowerCase() === emp.email.toLowerCase()
-                      ? 'bg-brand-500/20 border-brand-500 text-white shadow-sm'
-                      : 'bg-carbon-850 border-white/5 text-slate-300 hover:bg-carbon-800'
-                  }`}
-                >
-                  <div className="font-bold text-white">
-                    {emp.firstName} {emp.lastName}
-                  </div>
-                  <div className="text-[10px] text-brand-300/80 truncate mt-0.5">
-                    {emp.role}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          {notice && <p role="status" className="text-sm text-amber-200">{notice}</p>}
 
           <button
             type="submit"
-            disabled={loading || !email}
-            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold text-sm shadow-xl shadow-brand-500/20 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            disabled={loading || !email.trim()}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-zinc-100 px-6 py-4 text-sm font-extrabold text-carbon-950 shadow-xl transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
           >
             {loading ? (
-              <span>Connexion en cours...</span>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Connexion en cours…
+              </>
             ) : (
               <>
-                <span>Accéder à mon tableau de bord</span>
-                <ArrowRight className="w-4 h-4 text-carbon-950" />
+                <span>Accéder à mon espace</span>
+                <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
         </form>
-      </div>
+      </section>
     </div>
   );
 }

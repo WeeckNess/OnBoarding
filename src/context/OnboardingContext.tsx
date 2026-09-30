@@ -27,11 +27,7 @@ interface OnboardingContextType {
   milestones: typeof MILESTONES;
   records: OnboardingRecord[];
   currentRecord: OnboardingRecord | null;
-  loginUser: (
-    email: string,
-    firstName?: string,
-    lastName?: string
-  ) => Promise<{ success: boolean; message?: string }>;
+  loginUser: (email: string) => Promise<{ success: boolean; message?: string }>;
   logoutUser: () => Promise<void>;
   signContract: (signatureImage: string) => Promise<boolean>;
   toggleTask: (taskId: string) => Promise<boolean>;
@@ -57,8 +53,11 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
   const body = await response.json();
-  if (!response.ok)
-    throw new Error(body.error || 'Le serveur est indisponible.');
+  if (!response.ok) {
+    const error = new Error(body.error || 'Le serveur est indisponible.') as Error & { code?: string };
+    error.code = body.code;
+    throw error;
+  }
   return body;
 }
 export function OnboardingProvider({
@@ -103,12 +102,22 @@ export function OnboardingProvider({
   }, [refresh]);
   const loginUser = async (email: string) => {
     setError('');
+    const requestedEmail = email.trim().toLowerCase();
+    sequence.current++;
     try {
       await api('/api/session', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: requestedEmail }),
       });
-      await refresh();
+      const result = await api<Workspace>('/api/workspace');
+      sequence.current++;
+      if (result.account?.email?.toLowerCase() !== requestedEmail) {
+        setWorkspace({ account: null, records: [] });
+        throw new Error(
+          'Le compte chargé ne correspond pas à cette adresse email.'
+        );
+      }
+      setWorkspace(result);
       return { success: true };
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Connexion impossible.';

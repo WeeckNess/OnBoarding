@@ -43,7 +43,7 @@ export default function RoadmapPage() {
       case 'culture':
         return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/15 text-orange-300 border border-orange-500/30">Culture & Codex</span>;
       case 'project':
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">Projet & Code</span>;
+        return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">Projet & Code</span>;
       default:
         return null;
     }
@@ -81,7 +81,7 @@ export default function RoadmapPage() {
 
           <div className="text-right shrink-0">
             <span className="text-xs text-slate-400 block font-mono">Progression Globale</span>
-            <span className="text-3xl font-black bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">
+            <span className="text-3xl font-black text-white">
               {progressPercentage}%
             </span>
           </div>
@@ -113,7 +113,7 @@ export default function RoadmapPage() {
             onClick={() => setSelectedMilestone('all')}
             className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-left cursor-pointer ${
               selectedMilestone === 'all'
-                ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 border-brand-400 shadow-md shadow-brand-500/20'
+                ? 'bg-zinc-100 text-carbon-950 border-brand-400 shadow-md'
                 : 'bg-carbon-850 border-white/5 text-slate-300 hover:bg-carbon-800'
             }`}
           >
@@ -133,7 +133,7 @@ export default function RoadmapPage() {
                 onClick={() => setSelectedMilestone(m.id)}
                 className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-left relative overflow-hidden cursor-pointer ${
                   isSelected
-                    ? 'bg-brand-500 text-carbon-950 border-brand-400 shadow-md shadow-brand-500/20'
+                    ? 'bg-zinc-100 text-carbon-950 border-brand-400 shadow-md'
                     : isFinished
                     ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200 hover:bg-emerald-950/60'
                     : 'bg-carbon-850 border-white/5 text-slate-300 hover:bg-carbon-800'
@@ -262,7 +262,7 @@ export default function RoadmapPage() {
                           <div className="shrink-0 self-end sm:self-center pl-10 sm:pl-0">
                             <Link
                               href={task.actionUrl}
-                              className="text-xs px-4 py-2.5 rounded-2xl bg-carbon-900 hover:bg-brand-500 hover:text-carbon-950 text-slate-200 border border-white/10 font-bold transition-all inline-flex items-center gap-1.5 shadow-sm"
+                              className="text-xs px-4 py-2.5 rounded-2xl bg-carbon-900 hover:bg-zinc-100 hover:text-carbon-950 text-slate-200 border border-white/10 font-bold transition-all inline-flex items-center gap-1.5 shadow-sm"
                             >
                               <span>{task.actionLabel || 'Accéder'}</span>
                               <ExternalLink className="w-3.5 h-3.5" />

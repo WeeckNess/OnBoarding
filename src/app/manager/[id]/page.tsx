@@ -1,6 +1,7 @@
 'use client';
 import { use, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -58,6 +59,7 @@ export default function ManagerDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
   const {
     records,
     currentUser,
@@ -67,7 +69,9 @@ export default function ManagerDetail({
     clearError,
     milestones,
   } = useOnboarding();
-  const [tab, setTab] = useState('preparation');
+  const [tab, setTab] = useState(
+    searchParams.get('tab') === 'parcours' ? 'parcours' : 'preparation'
+  );
   const [edit, setEdit] = useState<EditState | null>(null);
   const [saved, setSaved] = useState(false);
   const [taskOwner, setTaskOwner] = useState('all');
@@ -156,7 +160,7 @@ export default function ManagerDetail({
               <div className="min-w-0">
                 <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
                   {employee.firstName}{' '}
-                  <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">
+                  <span className="text-white">
                     {employee.lastName}
                   </span>
                 </h1>
@@ -227,7 +231,7 @@ export default function ManagerDetail({
           <button
             key={t.id}
             aria-current={tab === t.id ? 'page' : undefined}
-            className={`flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-3 text-xs font-bold transition-colors sm:flex-1 ${tab === t.id ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 shadow-md shadow-brand-500/15' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            className={`flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-3 text-xs font-bold transition-colors sm:flex-1 ${tab === t.id ? 'bg-zinc-100 text-carbon-950 shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
             onClick={() => {
               setTab(t.id);
               setSaved(false);
@@ -259,7 +263,7 @@ export default function ManagerDetail({
               <ul className="ml-7 mt-3 space-y-2 border-t border-brand-500/10 pt-3 text-xs text-slate-300">
                 {alerts.map((a) => (
                   <li key={a.id} className="flex items-center gap-2">
-                    <span className="h-1 w-1 shrink-0 rounded-full bg-brand-400" />
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-zinc-100" />
                     {a.title}
                   </li>
                 ))}

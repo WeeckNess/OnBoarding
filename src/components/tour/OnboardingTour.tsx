@@ -20,6 +20,21 @@ export function startOnboardingTour() {
   window.dispatchEvent(new Event(START_EVENT));
 }
 
+/**
+ * Garde la découpe (et son halo) à l'intérieur de l'écran : un élément collé
+ * au bord, comme le menu latéral, faisait déborder le cadre à gauche.
+ */
+const VIEWPORT_INSET = 6;
+function fitInViewport(rect: Rect): Rect {
+  const maxX = window.innerWidth - VIEWPORT_INSET;
+  const maxY = window.innerHeight - VIEWPORT_INSET;
+  const x = Math.max(VIEWPORT_INSET, rect.x);
+  const y = Math.max(VIEWPORT_INSET, rect.y);
+  const right = Math.min(maxX, rect.x + rect.w);
+  const bottom = Math.min(maxY, rect.y + rect.h);
+  return { x, y, w: Math.max(0, right - x), h: Math.max(0, bottom - y) };
+}
+
 function markCompleted() {
   try {
     localStorage.setItem(TOUR_STORAGE_KEY, 'true');
@@ -42,12 +57,14 @@ export default function OnboardingTour() {
   const target = useTourTarget(step, pathname, open);
 
   const start = useCallback(() => {
+    if (currentUser?.appRole !== 'employee') return;
     setIndex(0);
     setOpen(true);
-  }, []);
+  }, [currentUser?.appRole]);
 
   // Ouverture automatique à la première connexion + relance via évènement.
   useEffect(() => {
+    if (currentUser?.appRole !== 'employee') return;
     let done: string | null = null;
     try {
       done = localStorage.getItem(TOUR_STORAGE_KEY);
@@ -60,14 +77,14 @@ export default function OnboardingTour() {
       clearTimeout(timer);
       window.removeEventListener(START_EVENT, start);
     };
-  }, [start]);
+  }, [currentUser?.appRole, start]);
 
   // Chaque étape se joue sur sa page : on y navigue si besoin.
   useEffect(() => {
-    if (open && step.route && pathname !== step.route) {
+    if (currentUser?.appRole === 'employee' && open && step.route && pathname !== step.route) {
       router.push(step.route);
     }
-  }, [open, step, pathname, router]);
+  }, [currentUser?.appRole, open, step, pathname, router]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -84,7 +101,7 @@ export default function OnboardingTour() {
       origin: launcher
         ? { x: (launcher.left + launcher.width / 2) / window.innerWidth, y: launcher.top / window.innerHeight }
         : { y: 0.7 },
-      colors: ['#DEAF4A', '#E8BC60', '#F6E1B6', '#F59E0B', '#34D399'],
+      colors: ['#FFFFFF', '#E4E4E7', '#A1A1AA', '#E4E4E7', '#34D399'],
       disableForReducedMotion: true,
     });
     if (pathname !== '/dashboard') router.push('/dashboard');
@@ -112,7 +129,12 @@ export default function OnboardingTour() {
   const pad = step.padding ?? 10;
   const holeRect: Rect | null =
     target.status === 'found' && target.rect
-      ? { x: target.rect.x - pad, y: target.rect.y - pad, w: target.rect.w + pad * 2, h: target.rect.h + pad * 2 }
+      ? fitInViewport({
+          x: target.rect.x - pad,
+          y: target.rect.y - pad,
+          w: target.rect.w + pad * 2,
+          h: target.rect.h + pad * 2,
+        })
       : null;
 
   const isIntro = step.id === 'welcome';
@@ -125,7 +147,7 @@ export default function OnboardingTour() {
         <button
           data-tour="tour-launcher"
           onClick={start}
-          className="group flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-carbon-850/95 hover:bg-carbon-800 border border-brand-500/30 hover:border-brand-500/60 text-xs font-bold text-slate-200 shadow-xl shadow-brand-500/10 transition-all cursor-pointer backdrop-blur-md hover:-translate-y-0.5"
+          className="group flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-carbon-850/95 hover:bg-carbon-800 border border-brand-500/30 hover:border-brand-500/60 text-xs font-bold text-slate-200 shadow-xl transition-all cursor-pointer backdrop-blur-md hover:-translate-y-0.5"
           aria-label="Lancer le guide de la plateforme"
         >
           <span className="w-7 h-7 relative rounded-full overflow-hidden shrink-0 ring-1 ring-brand-500/40">
@@ -134,8 +156,8 @@ export default function OnboardingTour() {
           <span>Guide</span>
           {!open && (
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-100 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-zinc-100" />
             </span>
           )}
         </button>

@@ -1,6 +1,6 @@
 import type { Employee, RoadmapTask } from './index';
 
-export type AppRole = 'manager' | 'employee';
+export type AppRole = 'manager' | 'employee' | 'admin';
 export type Account = Employee & { appRole: AppRole };
 export type RequestStatus = 'requested' | 'in_progress' | 'ready' | 'blocked';
 export interface PreparationRequest {
@@ -18,10 +18,20 @@ export interface ManagedTask extends RoadmapTask {
   owner: 'employee' | 'manager';
   dueDate: string;
 }
+export type ComplianceStatus = 'pending' | 'complete';
+export interface HrCompliance {
+  dpae: ComplianceStatus;
+  mutuelle: ComplianceStatus;
+  rib: ComplianceStatus;
+  identity: ComplianceStatus;
+  socialSecurity: ComplianceStatus;
+  itCharter: ComplianceStatus;
+}
 export interface OnboardingRecord {
   employee: Employee;
   managerId: string;
   version: number;
+  hrCompliance?: HrCompliance;
   welcome: { host: string; location: string; time: string; message: string };
   requests: PreparationRequest[];
   documents: {
@@ -94,8 +104,10 @@ export type OnboardingAction =
     }
   | { type: 'blocker.create'; title: string }
   | { type: 'blocker.resolve'; id: string; response: string }
+  | { type: 'coffee.reserve'; time: string }
   | { type: 'feedback'; rating: number; comment: string }
   | { type: 'reminder'; message: string }
   | { type: 'notification.read'; id: string }
+  | { type: 'hr.compliance.set'; key: keyof HrCompliance; status: ComplianceStatus }
   | { type: 'sign'; signatureImage: string }
   | { type: 'reset' };

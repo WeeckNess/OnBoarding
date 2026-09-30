@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { readiness } from '@/lib/onboarding';
+import { dateOnly, readiness } from '@/lib/onboarding';
 import { startOnboardingTour } from './tour/OnboardingTour';
 import {
   LayoutDashboard,
@@ -24,7 +24,11 @@ import {
   LucideIcon,
   Sparkles,
   GraduationCap,
+  UserRound,
   X,
+  ShieldCheck,
+  Files,
+  ChartNoAxesCombined,
 } from 'lucide-react';
 
 interface NavItem {
@@ -32,8 +36,24 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   badge?: string;
+  compactBadge?: string;
+  muted?: boolean;
   status?: 'signed' | 'pending';
   accent?: string;
+}
+
+function daysFromToday(date: string, today: string) {
+  return Math.round(
+    (Date.parse(`${date.slice(0, 10)}T12:00:00Z`) -
+      Date.parse(`${today}T12:00:00Z`)) /
+      86400000
+  );
+}
+
+function arrivalDayLabel(days: number) {
+  if (days > 0) return `J−${days}`;
+  if (days === 0) return 'J0';
+  return `J+${Math.abs(days)}`;
 }
 
 interface NavGroup {
@@ -69,6 +89,7 @@ export default function ArcSidebar({
   const opener = useRef<HTMLButtonElement>(null);
   const compact = isCollapsed && !isMobileOpen;
   const isManager = currentUser?.appRole === 'manager';
+  const isAdmin = currentUser?.appRole === 'admin';
   const preparedCount = records.filter(
     (record) => readiness(record).ready
   ).length;
@@ -76,8 +97,16 @@ export default function ArcSidebar({
     ? records.length
       ? (preparedCount / records.length) * 100
       : 0
-    : progressPercentage;
-  const homePath = isManager ? '/manager' : '/dashboard';
+    : isAdmin ? 100 : progressPercentage;
+  const homePath = isAdmin ? '/admin' : isManager ? '/manager' : '/dashboard';
+  const today = dateOnly();
+  const sortedTeam = [...records].sort((a, b) => {
+    const aDays = daysFromToday(a.employee.startDate, today);
+    const bDays = daysFromToday(b.employee.startDate, today);
+    if (aDays >= 0 && bDays < 0) return -1;
+    if (aDays < 0 && bDays >= 0) return 1;
+    return aDays >= 0 ? aDays - bDays : Math.abs(aDays) - Math.abs(bDays);
+  });
 
   useEffect(() => {
     if (!isMobileOpen) return;
@@ -134,7 +163,7 @@ export default function ArcSidebar({
     resetProgress();
     setResetToast(true);
     setTimeout(() => setResetToast(false), 2000);
-    if (!isManager) {
+    if (currentUser?.appRole === 'employee') {
       router.push('/dashboard');
       setTimeout(startOnboardingTour, 400);
     }
@@ -144,7 +173,19 @@ export default function ArcSidebar({
     return null;
   }
 
-  const navGroups: NavGroup[] = isManager
+  const navGroups: NavGroup[] = isAdmin
+    ? [
+        {
+          id: 'admin',
+          title: 'Pilotage RH',
+          items: [
+            { href: '/admin', label: 'Vue d’ensemble', icon: ChartNoAxesCombined, badge: String(records.length) },
+            { href: '/admin/compliance', label: 'Conformité RH', icon: Files },
+            { href: '/admin/teams', label: 'Suivi des équipes', icon: ShieldCheck },
+          ],
+        },
+      ]
+    : isManager
     ? [
         {
           id: 'onboarding',
@@ -161,17 +202,25 @@ export default function ArcSidebar({
         {
           id: 'roadmap',
           title: 'Mon équipe',
-          items: records.map((record) => ({
-            href: `/manager/${record.employee.id}`,
-            label: `${record.employee.firstName} ${record.employee.lastName}`,
-            icon: UserCheck,
-          })),
+          items: sortedTeam.map((record) => {
+            const days = daysFromToday(record.employee.startDate, today);
+            const dayLabel = arrivalDayLabel(days);
+            return {
+              href: `/manager/${record.employee.id}`,
+              label: `${record.employee.firstName} ${record.employee.lastName}`,
+              icon: UserCheck,
+              badge: dayLabel,
+              compactBadge: dayLabel,
+              muted: days <= -30,
+            };
+          }),
         },
         {
           id: 'resources',
           title: 'Ressources',
           items: [
             { href: '/codex', label: 'Codex & Documentation', icon: BookOpen },
+            { href: '/account', label: 'Mon compte', icon: UserRound },
           ],
         },
       ]
@@ -233,6 +282,12 @@ export default function ArcSidebar({
               icon: BookOpen,
               accent: 'sand',
             },
+            {
+              href: '/account',
+              label: 'Mon compte',
+              icon: UserRound,
+              accent: 'sand',
+            },
           ],
         },
       ];
@@ -259,7 +314,7 @@ export default function ArcSidebar({
         </div>
 
         <div className="text-xs px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/20">
-          {isManager ? `${records.length} suivis` : `${progressPercentage}%`}
+          {isAdmin ? `${records.length} profils` : isManager ? `${records.length} suivis` : `${progressPercentage}%`}
         </div>
       </div>
 
@@ -276,7 +331,7 @@ export default function ArcSidebar({
         ref={menu}
         id="arc-sidebar"
         aria-label={
-          isManager ? 'Navigation manager' : 'Navigation collaborateur'
+          isAdmin ? 'Navigation RH / Admin' : isManager ? 'Navigation manager' : 'Navigation collaborateur'
         }
         className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
           compact ? 'w-20 items-center' : 'w-72'
@@ -342,10 +397,12 @@ export default function ArcSidebar({
               <div className="p-3 rounded-2xl bg-carbon-850/90 border border-white/5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    {isManager ? 'Espace Manager' : 'Espace Salarié'}
+                    {isAdmin ? 'Espace RH / Admin' : isManager ? 'Espace Manager' : 'Espace Salarié'}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
-                    {isManager
+                    {isAdmin
+                      ? 'Pilotage entreprise'
+                      : isManager
                       ? `${preparedCount}/${records.length} prêts`
                       : `${progressPercentage}% complété`}
                   </span>
@@ -353,7 +410,7 @@ export default function ArcSidebar({
 
                 <div className="w-full bg-carbon-900 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-brand-500/30"
+                    className="bg-accent-gold h-full rounded-full transition-all duration-300 shadow-sm"
                     style={{
                       width: `${isManager ? spaceProgress : Math.max(spaceProgress, 5)}%`,
                     }}
@@ -408,18 +465,18 @@ export default function ArcSidebar({
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsMobileOpen(false)}
-                          title={item.label}
+                          title={item.badge ? `${item.label} · ${item.badge}` : item.label}
                           aria-current={isActive ? 'page' : undefined}
-                          className={`flex items-center rounded-2xl text-xs font-medium transition-all group ${
+                          className={`flex items-center rounded-2xl text-xs font-medium transition-all group ${item.muted ? 'opacity-50 hover:opacity-80' : ''} ${
                             compact
-                              ? `w-12 h-12 justify-center ${
+                              ? `relative w-12 h-12 justify-center ${
                                   isActive
-                                    ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-bold shadow-md shadow-brand-500/25 scale-105'
+                                    ? 'bg-zinc-100 text-carbon-950 font-bold shadow-md scale-105'
                                     : 'text-slate-300 hover:text-white hover:bg-carbon-850'
                                 }`
                               : `gap-3 px-3.5 py-2.5 w-full ${
                                   isActive
-                                    ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-bold shadow-md shadow-brand-500/20'
+                                    ? 'bg-zinc-100 text-carbon-950 font-bold shadow-md'
                                     : 'text-slate-300 hover:text-white hover:bg-white/5'
                                 }`
                           }`}
@@ -431,6 +488,12 @@ export default function ArcSidebar({
                                 : 'text-slate-400 group-hover:text-brand-400'
                             }`}
                           />
+
+                          {compact && item.compactBadge && (
+                            <span className={`absolute -bottom-1 -right-1 rounded-md border border-white/10 bg-carbon-800 px-1 text-[8px] font-bold leading-4 shadow-lg ${item.muted ? 'text-slate-400' : 'text-brand-200'}`}>
+                              {item.compactBadge}
+                            </span>
+                          )}
 
                           {!compact && (
                             <div className="flex-1 flex items-center justify-between truncate">
@@ -455,7 +518,7 @@ export default function ArcSidebar({
                                 />
                               )}
                               {item.status === 'pending' && (
-                                <span className="w-2 h-2 rounded-full bg-brand-400 shrink-0 animate-pulse" />
+                                <span className="w-2 h-2 rounded-full bg-zinc-100 shrink-0 animate-pulse" />
                               )}
                             </div>
                           )}
@@ -498,7 +561,7 @@ export default function ArcSidebar({
               className={`flex items-center p-1.5 rounded-xl hover:bg-white/5 transition-colors ${compact ? 'justify-center' : 'gap-3'}`}
             >
               <div
-                className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-carbon-950 text-xs font-black ring-2 ring-brand-500/40"
+                className="w-9 h-9 shrink-0 rounded-xl bg-zinc-100 flex items-center justify-center text-carbon-950 text-xs font-black ring-2 ring-brand-500/40"
                 title={`${currentUser.firstName} ${currentUser.lastName} (${currentUser.role})`}
               >
                 {currentUser.firstName?.[0] || 'U'}
@@ -521,7 +584,7 @@ export default function ArcSidebar({
               <div
                 className={`grid ${isManager ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5 pt-1`}
               >
-                {!isManager && (
+                {!isManager && !isAdmin && (
                   <button
                     onClick={handleReset}
                     title="Réinitialiser l'onboarding pour la démo"
@@ -543,7 +606,7 @@ export default function ArcSidebar({
               </div>
             ) : (
               <div className="flex flex-col gap-2 items-center pt-1">
-                {!isManager && (
+                {!isManager && !isAdmin && (
                   <button
                     onClick={handleReset}
                     title="Réinitialiser l'onboarding"

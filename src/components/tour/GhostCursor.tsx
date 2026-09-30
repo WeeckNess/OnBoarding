@@ -167,11 +167,11 @@ function DrawDemo({ selector }: { selector: string }) {
           ref={pathRef}
           d={SIGNATURE_PATH}
           fill="none"
-          stroke="#DEAF4A"
+          stroke="#E4E4E7"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ filter: 'drop-shadow(0 0 6px rgba(222,175,74,0.55))' }}
+          style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.35))' }}
         />
       </svg>
       <div ref={cursorRef} className="absolute left-0 top-0">
@@ -249,7 +249,7 @@ function TypeDemo({ selector, words }: { selector: string; words: string[] }) {
       style={{ left: anchor.left, top: anchor.top, height: anchor.height, fontSize: anchor.font }}
     >
       <span>{text}</span>
-      <span className="tour-caret ml-px inline-block w-[2px] h-[1.2em] bg-brand-400 rounded-full" />
+      <span className="tour-caret ml-px inline-block w-[2px] h-[1.2em] bg-zinc-100 rounded-full" />
     </div>
   );
 }

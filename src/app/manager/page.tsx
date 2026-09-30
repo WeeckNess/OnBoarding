@@ -13,9 +13,11 @@ import {
   Sun,
   ArrowUpRight,
   AlertCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { alertsFor, dateOnly, formatDate, readiness } from '@/lib/onboarding';
+import { HEADCOUNT_PROJECTION } from '@/lib/integrations/lucca/mockDirectory';
 import {
   Avatar,
   Badge,
@@ -26,6 +28,14 @@ import {
   ReadinessStrip,
   secondaryClass,
 } from '@/components/manager/ui';
+
+function daysFromToday(date: string, today: string) {
+  return Math.round(
+    (Date.parse(`${date.slice(0, 10)}T12:00:00Z`) -
+      Date.parse(`${today}T12:00:00Z`)) /
+      86400000
+  );
+}
 
 export default function ManagerPage() {
   const { currentUser, records, refresh } = useOnboarding();
@@ -40,9 +50,39 @@ export default function ManagerPage() {
     .filter((r) => r.employee.startDate > today)
     .sort((a, b) => a.employee.startDate.localeCompare(b.employee.startDate));
   const ready = records.filter((r) => readiness(r).ready);
+  const inProgress = records.filter((r) => {
+    const days = daysFromToday(r.employee.startDate, today);
+    return days <= 0 && days > -30;
+  });
+  const completed = records.filter(
+    (r) => daysFromToday(r.employee.startDate, today) <= -30
+  );
   const nextArrival = upcoming[0];
+  const upcomingTasks = records
+    .flatMap((record) =>
+      record.tasks
+        .filter(
+          (task) =>
+            task.dueDate > today &&
+            !record.employee.completedTaskIds.includes(task.id)
+        )
+        .map((task) => ({ task, employee: record.employee }))
+    )
+    .sort((a, b) => a.task.dueDate.localeCompare(b.task.dueDate))
+    .slice(0, 5);
+  const upcomingTaskCount = records.reduce(
+    (count, record) =>
+      count +
+      record.tasks.filter(
+        (task) =>
+          task.dueDate > today &&
+          !record.employee.completedTaskIds.includes(task.id)
+      ).length,
+    0
+  );
   const visible = records
     .filter((r) => {
+      const daysSinceStart = daysFromToday(r.employee.startDate, today);
       const matches =
         `${r.employee.firstName} ${r.employee.lastName} ${r.employee.role} ${r.employee.department}`
           .toLocaleLowerCase('fr')
@@ -51,12 +91,19 @@ export default function ManagerPage() {
         matches &&
         (filter === 'all' ||
           (filter === 'upcoming' && r.employee.startDate > today) ||
-          (filter === 'ongoing' && r.employee.startDate <= today) ||
+          (filter === 'ongoing' && daysSinceStart <= 0 && daysSinceStart > -30) ||
+          (filter === 'completed' && daysSinceStart <= -30) ||
           (filter === 'attention' && alertsFor(r).length > 0) ||
           (filter === 'ready' && readiness(r).ready))
       );
     })
-    .sort((a, b) => a.employee.startDate.localeCompare(b.employee.startDate));
+    .sort((a, b) => {
+      const aUpcoming = a.employee.startDate > today;
+      const bUpcoming = b.employee.startDate > today;
+      if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+      const byDate = a.employee.startDate.localeCompare(b.employee.startDate);
+      return aUpcoming ? byDate : -byDate;
+    });
   const showTeam = (value: string) => {
     setFilter(value);
     document
@@ -77,7 +124,7 @@ export default function ManagerPage() {
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
               Bonjour,{' '}
-              <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">
+              <span className="text-white">
                 {currentUser.firstName}
               </span>{' '}
               <span className="inline-block text-3xl">👋</span>
@@ -112,7 +159,7 @@ export default function ManagerPage() {
       </header>
 
       <div
-        className="glass-panel grid grid-cols-2 gap-2 rounded-3xl border border-white/10 p-3 shadow-xl lg:grid-cols-4"
+        className="glass-panel grid grid-cols-2 gap-2 rounded-3xl border border-white/10 p-3 shadow-xl lg:grid-cols-5"
         aria-label="Vue d’ensemble de l’équipe"
       >
         {[
@@ -144,6 +191,13 @@ export default function ManagerPage() {
             filter: 'attention',
             note: 'Actions et blocages',
           },
+          {
+            label: 'Effectif visé fin 2027',
+            value: HEADCOUNT_PROJECTION.target,
+            icon: TrendingUp,
+            filter: 'all',
+            note: `${HEADCOUNT_PROJECTION.baseline} fiches dans la base · +${HEADCOUNT_PROJECTION.target - HEADCOUNT_PROJECTION.baseline} visées`,
+          },
         ].map(({ label, value, icon: Icon, filter: valueFilter, note }) => (
           <button
             key={label}
@@ -170,63 +224,57 @@ export default function ManagerPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
         <Panel
-          title="Actions prioritaires"
-          description="Les points à débloquer pour vos collaborateurs"
-          icon={Clock}
-          className="lg:col-span-7 flex flex-col"
-          action={
-            <Badge tone={alerts.length ? 'amber' : 'green'}>
-              {alerts.length} à traiter
-            </Badge>
-          }
+          title="Prochaines tâches à faire"
+          description="Échéances à venir dans les parcours de votre équipe"
+          icon={CalendarDays}
+          className="lg:col-span-7 flex flex-col border-brand-400/20"
+          action={<Badge tone={upcomingTaskCount ? 'amber' : 'green'}>{upcomingTaskCount} à venir</Badge>}
         >
-          <div className="flex-1 space-y-3">
-            {alerts.length ? (
-              alerts.slice(0, 4).map((a) => (
-                <Link
-                  key={`${a.employee.id}-${a.id}`}
-                  href={`/manager/${a.employee.id}`}
-                  className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-carbon-850 p-3.5 transition-colors hover:border-brand-500/40"
-                >
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${a.urgent ? 'border-red-400/20 bg-red-400/10 text-red-300' : 'border-brand-500/20 bg-brand-500/10 text-brand-400'}`}
+          <div className="flex-1 space-y-2">
+            {upcomingTasks.length ? (
+              upcomingTasks.map(({ task, employee }) => {
+                const days = daysFromToday(task.dueDate, today);
+                return (
+                  <Link
+                    key={`${employee.id}-${task.id}`}
+                    href={`/manager/${employee.id}?tab=parcours`}
+                    className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-carbon-850/80 p-3.5 transition-colors hover:border-brand-400/40 hover:bg-carbon-800"
                   >
-                    <AlertCircle size={16} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold leading-relaxed text-white">
-                      {a.title}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-slate-400">
-                      {a.employee.firstName} {a.employee.lastName}
-                    </p>
-                  </div>
-                  <ArrowUpRight
-                    size={16}
-                    className="shrink-0 text-slate-500 transition-colors group-hover:text-brand-400"
-                  />
-                </Link>
-              ))
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brand-400/20 bg-brand-400/10 text-brand-300">
+                      <Clock size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-bold text-white">
+                        {task.title}
+                      </span>
+                      <span className="mt-1 block text-[11px] text-slate-400">
+                        {employee.firstName} {employee.lastName} · {task.owner === 'manager' ? 'À faire par vous' : 'Étape collaborateur'}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className={`block text-xs font-bold ${days <= 2 ? 'text-amber-300' : 'text-brand-300'}`}>
+                        {days === 1 ? 'Demain' : `Dans ${days} j`}
+                      </span>
+                      <span className="mt-1 block text-[10px] text-slate-500">{formatDate(task.dueDate)}</span>
+                    </span>
+                    <ArrowUpRight size={15} className="shrink-0 text-slate-500 transition-colors group-hover:text-brand-400" />
+                  </Link>
+                );
+              })
             ) : (
-              <Empty>
-                Aucun blocage ni échéance à traiter. Tout est à jour pour votre
-                équipe.
-              </Empty>
+              <Empty>Aucune tâche à venir pour le moment. Les échéances apparaîtront ici dès qu’un parcours sera planifié.</Empty>
             )}
           </div>
-          <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/5 pt-4 text-xs">
-            <span className="text-slate-500">
-              {alerts.length > 4
-                ? `${alerts.length - 4} autres points dans les dossiers`
-                : 'Chaque action compte pour le premier jour'}
-            </span>
+          {alerts.length > 0 && (
             <button
               onClick={() => showTeam('attention')}
-              className="shrink-0 font-bold text-brand-400 hover:text-brand-300"
+              className="mt-4 flex w-full items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/[0.07] px-3.5 py-3 text-left text-xs transition-colors hover:bg-amber-400/10"
             >
-              Voir les dossiers <ArrowRight size={12} className="inline ml-1" />
+              <AlertCircle size={15} className="shrink-0 text-amber-300" />
+              <span className="flex-1 font-semibold text-amber-100">{alerts.length} point{alerts.length > 1 ? 's' : ''} déjà à traiter</span>
+              <span className="font-bold text-amber-300">Voir <ArrowRight size={12} className="ml-1 inline" /></span>
             </button>
-          </div>
+          )}
         </Panel>
         <Panel
           title="Prochaine arrivée"
@@ -302,16 +350,23 @@ export default function ManagerPage() {
       <section
         id="team-onboardings"
         aria-label="Liste des onboardings"
-        className="scroll-mt-8 space-y-5"
+        className="scroll-mt-8 space-y-4"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-white">
-              Les parcours de mon équipe
-            </h2>
-            <Badge>{records.length}</Badge>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-xl font-bold text-white">
+                Les parcours de mon équipe
+              </h2>
+              <Badge>{records.length} profils</Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge tone="amber">{upcoming.length} à venir</Badge>
+              <Badge>{inProgress.length} en cours</Badge>
+              <Badge tone="neutral">{completed.length} terminés</Badge>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative sm:w-64">
               <Search
                 size={15}
@@ -327,13 +382,14 @@ export default function ManagerPage() {
             </div>
             <select
               aria-label="Filtrer les onboardings"
-              className={`${inputClass} sm:w-44 !text-xs`}
+              className={`${inputClass} sm:w-48 !text-xs`}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
               <option value="all">Tous les parcours</option>
               <option value="upcoming">À venir</option>
               <option value="ongoing">En cours</option>
+              <option value="completed">Terminés · J+30</option>
               <option value="attention">À traiter</option>
               <option value="ready">Arrivées préparées</option>
             </select>
@@ -342,75 +398,90 @@ export default function ManagerPage() {
         {!visible.length ? (
           <Empty>Aucun collaborateur ne correspond à ces critères.</Empty>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {visible.map((r) => {
-              const prep = readiness(r);
-              const attention = alertsFor(r);
-              const done = r.tasks.filter((t) =>
-                r.employee.completedTaskIds.includes(t.id)
-              ).length;
-              return (
-                <Link
-                  key={r.employee.id}
-                  href={`/manager/${r.employee.id}`}
-                  className="glass-card group relative overflow-hidden rounded-3xl border border-white/10 p-6"
-                >
-                  <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-brand-500/[0.04] blur-3xl transition-colors group-hover:bg-brand-500/10" />
-                  <div className="relative flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <Avatar
-                        firstName={r.employee.firstName}
-                        lastName={r.employee.lastName}
-                      />
+          <div className="glass-panel overflow-hidden rounded-3xl border border-white/10 shadow-xl">
+            <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(150px,1fr)_minmax(145px,0.9fr)_minmax(155px,1fr)] gap-4 border-b border-white/10 bg-carbon-850/70 px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 lg:grid">
+              <span>Collaborateur</span>
+              <span>Arrivée</span>
+              <span>Essentiels J1</span>
+              <span>À préparer</span>
+            </div>
+            <div className="divide-y divide-white/5">
+              {visible.map((r) => {
+                const prep = readiness(r);
+                const alertsForRecord = alertsFor(r);
+                const daysUntil = daysFromToday(r.employee.startDate, today);
+                const isComplete = daysUntil <= -30;
+                const tasksBeforeDayOne = r.tasks.filter(
+                  (task) =>
+                    task.dueDate <= r.employee.startDate &&
+                    !r.employee.completedTaskIds.includes(task.id)
+                ).length;
+                const needsBeforeArrival = daysUntil > 0 && tasksBeforeDayOne > 0;
+                const urgent = alertsForRecord.some((alert) => alert.urgent);
+                const statusLabel = isComplete
+                  ? 'Onboarding terminé'
+                  : prep.ready
+                    ? 'Prêt pour J1'
+                    : urgent
+                      ? 'Action nécessaire'
+                      : 'En préparation';
+                const statusTone = isComplete
+                  ? 'neutral'
+                  : prep.ready
+                    ? 'green'
+                    : urgent
+                      ? 'red'
+                      : 'amber';
+                return (
+                  <Link
+                    key={r.employee.id}
+                    href={`/manager/${r.employee.id}`}
+                    className={`group grid min-w-0 grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-white/[0.035] sm:px-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(150px,1fr)_minmax(145px,0.9fr)_minmax(155px,1fr)] lg:items-center ${isComplete ? 'opacity-50 hover:opacity-80' : ''}`}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar firstName={r.employee.firstName} lastName={r.employee.lastName} />
                       <div className="min-w-0">
-                        <h3 className="font-bold text-white">
+                        <p className="truncate text-sm font-bold text-white">
                           {r.employee.firstName} {r.employee.lastName}
-                        </h3>
-                        <p className="mt-1 text-xs text-slate-400">
-                          {r.employee.role}
+                        </p>
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                          {r.employee.role} · {r.employee.department}
                         </p>
                       </div>
+                      <ArrowUpRight size={15} className="ml-auto shrink-0 text-slate-600 transition-colors group-hover:text-brand-400 lg:hidden" />
                     </div>
-                    <ArrowUpRight
-                      size={18}
-                      className="shrink-0 text-slate-500 transition-colors group-hover:text-brand-400"
-                    />
-                  </div>
-                  <div className="my-5 flex flex-wrap items-center justify-between gap-2">
-                    <Badge
-                      tone={
-                        prep.ready
-                          ? 'green'
-                          : attention.some((a) => a.urgent)
-                            ? 'red'
-                            : 'amber'
-                      }
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      {prep.ready
-                        ? 'Arrivée préparée'
-                        : attention.some((a) => a.urgent)
-                          ? 'Action nécessaire'
-                          : 'En préparation'}
-                    </Badge>
-                    <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <CalendarDays size={13} />
-                      {formatDate(r.employee.startDate)}
-                    </span>
-                  </div>
-                  <ReadinessStrip checks={prep.checks} compact />
-                  <div className="mt-5 flex flex-wrap justify-between gap-2 border-t border-white/5 pt-4 text-[11px]">
-                    <span className="text-slate-500">
-                      {r.employee.department}
-                    </span>
-                    <span className="font-semibold text-brand-300">
-                      {done}/{r.tasks.length} tâches réalisées{' '}
-                      <ArrowRight size={12} className="ml-1 inline" />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+                    <div className="flex items-center justify-between gap-3 lg:block">
+                      <div className={`inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold ${needsBeforeArrival ? 'border-dashed border-amber-400/50 bg-amber-400/[0.06] text-amber-200' : isComplete ? 'border-white/5 bg-white/[0.025] text-slate-500' : 'border-white/10 bg-carbon-850 text-slate-300'}`}>
+                        {needsBeforeArrival && <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full border-2 border-dashed border-amber-300" />}
+                        <CalendarDays size={13} />
+                        {daysUntil > 0
+                          ? daysUntil === 1 ? 'J−1 · Demain' : `J−${daysUntil}`
+                          : daysUntil === 0 ? 'J0 · Aujourd’hui' : `J+${Math.abs(daysUntil)}`}
+                      </div>
+                      <p className="text-[11px] text-slate-500 lg:mt-1">{formatDate(r.employee.startDate)}</p>
+                    </div>
+                    <div>
+                      <div className="flex gap-1" aria-label={`${prep.count} essentiels sur 4 préparés`}>
+                        {prep.checks.map((check) => (
+                          <span key={check.label} title={`${check.label} : ${check.done ? 'prêt' : 'à préparer'}`} className={`h-1.5 flex-1 rounded-full ${check.done ? 'bg-zinc-100' : 'bg-white/10'}`} />
+                        ))}
+                      </div>
+                      <p className="mt-1.5 text-[10px] text-slate-500">{prep.count}/4 essentiels du premier jour</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 lg:block">
+                      {needsBeforeArrival ? (
+                        <span className="rounded-lg border border-dashed border-amber-400/40 px-2.5 py-1.5 text-[11px] font-semibold text-amber-200">
+                          {tasksBeforeDayOne} tâche{tasksBeforeDayOne > 1 ? 's' : ''} avant J1
+                        </span>
+                      ) : (
+                        <Badge tone={statusTone}>{statusLabel}</Badge>
+                      )}
+                      <ArrowUpRight size={15} className="hidden shrink-0 text-slate-600 transition-colors group-hover:text-brand-400 lg:block" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
       </section>

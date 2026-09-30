@@ -51,7 +51,7 @@ export default function TourIntro({ firstName, onStart, onSkip }: TourIntroProps
           {/* Aperçu du parcours */}
           <div className="relative">
             <div className="absolute left-[10%] right-[10%] top-[22px] h-px bg-white/10" />
-            <div className="tour-line absolute left-[10%] right-[10%] top-[22px] h-px bg-gradient-to-r from-brand-600 via-brand-400 to-brand-300" />
+            <div className="tour-line absolute left-[10%] right-[10%] top-[22px] h-px bg-zinc-100" />
             <ol className="relative grid grid-cols-5 gap-1">
               {STOPS.map(({ icon: Icon, label }, i) => (
                 <li key={label} className="tour-rise flex flex-col items-center gap-1.5" style={{ animationDelay: `${0.25 + i * 0.12}s` }}>
@@ -68,7 +68,7 @@ export default function TourIntro({ firstName, onStart, onSkip }: TourIntroProps
             <button
               ref={startRef}
               onClick={onStart}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-carbon-950 font-extrabold text-sm shadow-xl shadow-brand-500/25 hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-900"
+              className="w-full py-3.5 rounded-2xl bg-zinc-100 text-carbon-950 font-extrabold text-sm shadow-xl hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-900"
             >
               <span>C’est parti</span>
               <ArrowRight className="w-4 h-4" />

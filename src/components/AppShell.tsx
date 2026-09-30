@@ -12,17 +12,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isManager = currentUser?.appRole === 'manager';
+  const isAdmin = currentUser?.appRole === 'admin';
   const wrongSpace =
     !!currentUser &&
-    (isManager
-      ? !pathname.startsWith('/manager') &&
-        pathname !== '/codex' &&
-        pathname !== '/'
-      : pathname.startsWith('/manager'));
+    (isAdmin
+      ? !pathname.startsWith('/admin') && pathname !== '/'
+      : isManager
+        ? !pathname.startsWith('/manager') && pathname !== '/codex' && pathname !== '/'
+        : pathname.startsWith('/manager') || pathname.startsWith('/admin'));
   useEffect(() => {
     if (isLoaded && !currentUser && pathname !== '/') router.replace('/');
-    else if (wrongSpace) router.replace(isManager ? '/manager' : '/dashboard');
-  }, [isLoaded, currentUser, pathname, router, wrongSpace, isManager]);
+    else if (wrongSpace)
+      router.replace(isAdmin ? '/admin' : isManager ? '/manager' : '/dashboard');
+  }, [isLoaded, currentUser, pathname, router, wrongSpace, isManager, isAdmin]);
   const errorBanner = error ? (
     <div
       role="alert"
@@ -138,7 +140,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Interactive Tour Assistant */}
-      {!isManager && <OnboardingTour />}
+      {currentUser.appRole === 'employee' && <OnboardingTour />}
     </div>
   );
 }

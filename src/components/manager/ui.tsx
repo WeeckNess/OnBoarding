@@ -12,7 +12,7 @@ import {
 export const inputClass =
   'w-full rounded-xl border border-white/10 bg-carbon-850 px-4 py-3 text-sm text-white [color-scheme:dark] placeholder:text-slate-500 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition-colors';
 export const buttonClass =
-  'inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-4 py-2.5 text-xs font-bold text-carbon-950 shadow-md shadow-brand-500/15 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-wait transition-all';
+  'inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2.5 text-xs font-bold text-carbon-950 shadow-md hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-wait transition-all';
 export const secondaryClass =
   'inline-flex items-center justify-center gap-2 rounded-xl border border-white/5 bg-carbon-850 px-3.5 py-2.5 text-xs font-bold text-slate-300 hover:bg-carbon-800 hover:text-brand-300 disabled:opacity-50 transition-colors';
 
@@ -43,7 +43,7 @@ export function Avatar({
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center bg-gradient-to-br from-brand-600 to-brand-300 text-carbon-950 font-extrabold ring-2 ring-brand-500/25 shadow-lg shadow-brand-500/10 ${large ? 'h-16 w-16 rounded-2xl text-xl' : 'h-11 w-11 rounded-2xl text-sm'}`}
+      className={`inline-flex shrink-0 items-center justify-center bg-zinc-100 text-carbon-950 font-extrabold ring-2 ring-brand-500/25 shadow-lg ${large ? 'h-16 w-16 rounded-2xl text-xl' : 'h-11 w-11 rounded-2xl text-sm'}`}
     >
       {firstName[0]}
       {lastName[0]}
@@ -72,6 +72,7 @@ export function Badge({
   );
 }
 export function Panel({
+  id,
   title,
   description,
   action,
@@ -79,6 +80,7 @@ export function Panel({
   className = '',
   children,
 }: {
+  id?: string;
   title: string;
   description?: string;
   action?: React.ReactNode;
@@ -88,6 +90,7 @@ export function Panel({
 }) {
   return (
     <section
+      id={id}
       className={`glass-panel rounded-3xl border border-white/10 p-5 sm:p-7 shadow-xl min-w-0 ${className}`}
     >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
@@ -123,7 +126,7 @@ export function ReadinessStrip({
         {checks.map((c) => (
           <div
             key={c.label}
-            className={`h-1.5 flex-1 rounded-full ${c.done ? 'bg-gradient-to-r from-brand-600 to-brand-400 shadow-sm shadow-brand-500/30' : 'bg-white/[0.06]'}`}
+            className={`h-1.5 flex-1 rounded-full ${c.done ? 'bg-zinc-100 shadow-sm' : 'bg-white/[0.06]'}`}
           />
         ))}
       </div>

@@ -24,7 +24,7 @@ export default function ProgressBar() {
           </p>
         </div>
         <div className="text-right">
-          <span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">
+          <span className="text-2xl sm:text-3xl font-black text-white">
             {progressPercentage}%
           </span>
         </div>
@@ -33,7 +33,7 @@ export default function ProgressBar() {
       {/* Main Bar */}
       <div className="w-full bg-carbon-900 rounded-full h-3 overflow-hidden p-0.5 border border-white/5">
         <div
-          className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-300 h-full rounded-full transition-all duration-500 shadow-sm shadow-brand-500/30"
+          className="bg-accent-gold h-full rounded-full transition-all duration-500 shadow-sm"
           style={{ width: `${Math.max(progressPercentage, 4)}%` }}
         />
       </div>

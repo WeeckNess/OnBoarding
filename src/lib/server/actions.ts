@@ -50,12 +50,12 @@ function find<T extends { id: string }>(items: T[], id: unknown): T {
   if (!item) throw new HttpError(404, 'Élément introuvable.');
   return item;
 }
-export function applyAction(account: Account, id: string, payload: unknown) {
+export async function applyAction(account: Account, id: string, payload: unknown) {
   const body = object(payload);
   if (!Number.isInteger(body.version) || Number(body.version) < 1)
     throw new HttpError(400, 'Version du dossier requise.');
   const action = object(body.action);
-  const record = recordById(id);
+  const record = await recordById(id);
   authorize(account, record);
   if (record.version !== body.version)
     throw new HttpError(
@@ -74,6 +74,7 @@ export function applyAction(account: Account, id: string, payload: unknown) {
   ];
   const employeeActions = [
     'blocker.create',
+    'coffee.reserve',
     'feedback',
     'notification.read',
     'sign',
@@ -83,7 +84,8 @@ export function applyAction(account: Account, id: string, payload: unknown) {
     (managerActions.includes(String(action.type)) &&
       account.appRole !== 'manager') ||
     (employeeActions.includes(String(action.type)) &&
-      account.appRole !== 'employee')
+      account.appRole !== 'employee') ||
+    (action.type === 'hr.compliance.set' && account.appRole !== 'admin')
   )
     throw new HttpError(403, 'Cette action ne correspond pas à votre rôle.');
   const now = new Date().toISOString();
@@ -246,6 +248,25 @@ export function applyAction(account: Account, id: string, payload: unknown) {
       label = `Blocage résolu : ${blocker.title}`;
       break;
     }
+    case 'coffee.reserve': {
+      const time = text(action.time, 5);
+      if (!['09:30', '10:30', '14:00', '15:30'].includes(time))
+        throw new HttpError(400, 'Ce créneau café n’est pas disponible.');
+      const reservation = record.meetings.find(
+        (meeting) => meeting.id === 'coffee-reservation'
+      );
+      const coffee = {
+        id: 'coffee-reservation',
+        title: 'Café d’accueil avec ton buddy',
+        dueDate: record.employee.startDate,
+        done: false,
+        notes: `${time} · 30 min`,
+      };
+      if (reservation) Object.assign(reservation, coffee);
+      else record.meetings.push(coffee);
+      label = `Café d’accueil réservé à ${time}`;
+      break;
+    }
     case 'feedback': {
       if (
         !Number.isInteger(action.rating) ||
@@ -274,6 +295,36 @@ export function applyAction(account: Account, id: string, payload: unknown) {
     case 'notification.read': {
       find(record.notifications, action.id).read = true;
       label = 'Rappel lu';
+      break;
+    }
+    case 'hr.compliance.set': {
+      const key = option(action.key, [
+        'dpae',
+        'mutuelle',
+        'rib',
+        'identity',
+        'socialSecurity',
+        'itCharter',
+      ] as const);
+      const status = option(action.status, ['pending', 'complete'] as const);
+      record.hrCompliance ||= {
+        dpae: 'pending',
+        mutuelle: 'pending',
+        rib: 'pending',
+        identity: 'pending',
+        socialSecurity: 'pending',
+        itCharter: 'pending',
+      };
+      record.hrCompliance[key] = status;
+      const labelText: Record<typeof key, string> = {
+        dpae: 'DPAE',
+        mutuelle: 'Mutuelle',
+        rib: 'RIB',
+        identity: 'Pièce d’identité',
+        socialSecurity: 'Attestation Sécurité sociale',
+        itCharter: 'Charte informatique',
+      };
+      label = `${labelText[key]} ${status === 'complete' ? 'validée' : 'rouverte'}`;
       break;
     }
     case 'sign': {
@@ -318,6 +369,6 @@ export function applyAction(account: Account, id: string, payload: unknown) {
     label,
     createdAt: now,
   });
-  saveRecord(record, Number(body.version));
+  await saveRecord(record, Number(body.version));
   return visibleRecord(account, record);
 }
