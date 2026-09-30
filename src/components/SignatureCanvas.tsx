@@ -174,7 +174,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
       )}
 
       {/* Signature Canvas Box */}
-      <div className="relative border-2 border-dashed border-white/15 hover:border-brand-500/50 rounded-2xl bg-carbon-900 overflow-hidden transition-colors">
+      <div data-tour="signature-pad" className="relative border-2 border-dashed border-white/15 hover:border-brand-500/50 rounded-2xl bg-carbon-900 overflow-hidden transition-colors">
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
@@ -184,7 +184,7 @@ export default function SignatureCanvas({ onSave, initialSignature }: SignatureC
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className={`w-full h-36 ${mode === 'draw' ? 'cursor-crosshair' : 'cursor-default'}`}
+          className={`w-full h-36 touch-none ${mode === 'draw' ? 'cursor-crosshair' : 'cursor-default'}`}
         />
 
         {!hasContent && (

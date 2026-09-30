@@ -1,5 +1,8 @@
 import { Employee, RoadmapMilestone, RoadmapTask, BuddyInfo, CodexArticle } from '@/types';
 
+/** Tâche validée uniquement par la signature électronique du contrat. */
+export const CONTRACT_TASK_ID = 'task-j1-1';
+
 export const INITIAL_EMPLOYEES: Employee[] = [
   {
     id: 'emp-01',

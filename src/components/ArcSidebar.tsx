@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { startOnboardingTour } from './tour/OnboardingTour';
 import { 
   LayoutDashboard, 
   MapPin, 
@@ -21,7 +21,8 @@ import {
   Search,
   CheckCircle2,
   LucideIcon,
-  Sparkles
+  Sparkles,
+  GraduationCap
 } from 'lucide-react';
 
 interface NavItem {
@@ -79,6 +80,9 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
     resetProgress();
     setResetToast(true);
     setTimeout(() => setResetToast(false), 2000);
+    // Démo : on repart de zéro, visite guidée comprise.
+    router.push('/dashboard');
+    setTimeout(startOnboardingTour, 400);
   };
 
   if (!currentUser) {
@@ -120,6 +124,12 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
       id: 'resources',
       title: 'Ressources & Équipe',
       items: [
+        {
+          href: '/elearning',
+          label: 'E-Learning',
+          icon: GraduationCap,
+          accent: 'gold'
+        },
         { 
           href: '/buddy', 
           label: 'Mon Buddy / Parrain', 
@@ -139,18 +149,18 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
   return (
     <>
       {/* Mobile Top Bar with Hamburger */}
-      <div className="md:hidden sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-4 py-3 flex items-center justify-between">
+      <div className="md:hidden sticky top-0 z-40 w-full glass-panel print:hidden border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <button
+          data-tour="mobile-menu"
           onClick={() => setIsMobileOpen(true)}
+          aria-label="Ouvrir le menu"
           className="p-2 rounded-xl bg-carbon-850 text-slate-200 border border-white/10"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 relative rounded-lg overflow-hidden ring-1 ring-brand-500/30">
-            <Image src="/logo-midi.png" alt="Midi Agency" fill className="object-cover" />
-          </div>
+          <div aria-hidden="true" className="w-7 h-7 rounded-lg bg-slate-600/70" />
           <span className="text-sm font-bold text-white">Data Insight</span>
         </div>
 
@@ -167,9 +177,9 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         />
       )}
 
-      {/* Sidebar Container (Arc Style Midi Agency) */}
+      {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
+        className={`print:hidden fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
           isCollapsed ? 'w-20 items-center' : 'w-72'
         } ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
@@ -179,14 +189,13 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         <div className={`w-full p-4 border-b border-white/5 ${isCollapsed ? 'flex flex-col items-center gap-3' : 'space-y-4'}`}>
           
           {isCollapsed ? (
-            /* Clean Collapsed Header: Centered Logo + Toggle Button */
+            /* Collapsed Header: Placeholder + Toggle Button */
             <div className="flex flex-col items-center gap-3">
               <Link
                 href="/dashboard"
-                className="w-10 h-10 relative rounded-2xl overflow-hidden shadow-lg shadow-brand-500/20 ring-2 ring-brand-500/40 hover:scale-110 transition-transform"
-                title="Data Insight Onboarding"
+                className="w-10 h-10 rounded-2xl bg-slate-600/70 hover:scale-110 transition-transform"
+                title="Data Insight"
               >
-                <Image src="/logo-midi.png" alt="Midi Agency" fill className="object-cover" />
               </Link>
 
               <button
@@ -198,26 +207,16 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
               </button>
             </div>
           ) : (
-            /* Expanded Header: Logo + Title + Collapse Button */
+            /* Expanded Header: Placeholder + Title + Collapse Button */
             <>
               <div className="flex items-center justify-between">
                 <Link 
                   href="/dashboard" 
                   className="flex items-center gap-3 overflow-hidden group"
                 >
-                  <div className="w-9 h-9 shrink-0 relative rounded-xl overflow-hidden shadow-md shadow-brand-500/20 ring-1 ring-brand-500/40 group-hover:scale-105 transition-transform">
-                    <Image src="/logo-midi.png" alt="Midi Agency" fill className="object-cover" />
-                  </div>
+                  <div aria-hidden="true" className="w-9 h-9 shrink-0 rounded-xl bg-slate-600/70 group-hover:scale-105 transition-transform" />
                   <div className="flex flex-col truncate">
-                    <div className="flex items-center gap-1.5 font-bold text-white tracking-tight text-sm">
-                      <span className="truncate">Data Insight</span>
-                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-brand-500/15 text-brand-300 border border-brand-500/30 shrink-0">
-                        Onboarding
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate">
-                      par <strong className="text-brand-400 font-medium">Midi Agency</strong>
-                    </span>
+                    <span className="truncate font-bold text-white tracking-tight text-sm">Data Insight</span>
                   </div>
                 </Link>
 
@@ -253,7 +252,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         </div>
 
         {/* Navigation Section with Dropdown Accordions */}
-        <div className={`flex-1 overflow-y-auto w-full p-3 space-y-4 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+        <div data-tour="sidebar-nav" className={`flex-1 overflow-y-auto w-full p-3 space-y-4 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
           
           {navGroups.map((group) => {
             const isOpen = openSections[group.id] ?? true;
@@ -358,7 +357,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         <div className={`p-3 border-t border-white/5 space-y-2 bg-[#101114] w-full ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
           
           {resetToast && (
-            <div className="p-2 rounded-xl bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[11px] font-bold text-center animate-in fade-in">
+            <div className="p-2 rounded-xl bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[11px] font-bold text-center animate-fade-in">
               ✨ Onboarding réinitialisé !
             </div>
           )}

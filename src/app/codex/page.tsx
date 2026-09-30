@@ -65,7 +65,7 @@ export default function CodexPage() {
             </p>
           </div>
 
-          <div className="w-full sm:w-80 relative">
+          <div data-tour="codex-search" className="w-full sm:w-80 relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
             <input
               type="text"

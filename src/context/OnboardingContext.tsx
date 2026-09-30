@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Employee, BuddyInfo, RoadmapTask, CodexArticle } from '@/types';
-import { INITIAL_EMPLOYEES, BUDDIES_DATA, ROADMAP_TASKS, CODEX_ARTICLES, MILESTONES } from '@/lib/mockData';
+import { INITIAL_EMPLOYEES, BUDDIES_DATA, ROADMAP_TASKS, CODEX_ARTICLES, MILESTONES, CONTRACT_TASK_ID } from '@/lib/mockData';
 
 interface OnboardingContextType {
   currentUser: Employee | null;
@@ -98,37 +98,27 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       contractSigned: true,
       signatureDate: new Date().toISOString(),
       signatureImage,
-      completedTaskIds: Array.from(new Set([...completedTaskIds, 'task-j1-1']))
+      completedTaskIds: Array.from(new Set([...completedTaskIds, CONTRACT_TASK_ID]))
     };
     saveUserState(updated);
     
-    // Also auto-complete the contract signature task in roadmap
-    setCompletedTaskIds((prev) => {
-      const nextTasks = Array.from(new Set([...prev, 'task-j1-1']));
-      localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(nextTasks));
-      return nextTasks;
-    });
+    // La signature valide aussi la tâche correspondante de la roadmap.
+    const nextTasks = Array.from(new Set([...completedTaskIds, CONTRACT_TASK_ID]));
+    setCompletedTaskIds(nextTasks);
+    localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(nextTasks));
   };
 
   const toggleTask = (taskId: string) => {
-    setCompletedTaskIds((prev) => {
-      const exists = prev.includes(taskId);
-      const next = exists ? prev.filter(id => id !== taskId) : [...prev, taskId];
-      localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(next));
+    // Le contrat ne se valide qu'en le signant (voir signContract) : on ne
+    // peut ni le « cocher » sans signature, ni l'annuler d'un clic.
+    if (taskId === CONTRACT_TASK_ID) return;
 
-      // Also sync back to currentUser if it's task-j1-1
-      if (taskId === 'task-j1-1' && currentUser) {
-        const isNowSigned = next.includes('task-j1-1');
-        const updatedUser = {
-          ...currentUser,
-          contractSigned: isNowSigned,
-          signatureDate: isNowSigned ? (currentUser.signatureDate || new Date().toISOString()) : undefined
-        };
-        saveUserState(updatedUser);
-      }
-
-      return next;
-    });
+    // Calculé hors du « updater » de setState : un updater doit rester pur
+    // (React peut l'appeler deux fois en mode strict).
+    const exists = completedTaskIds.includes(taskId);
+    const next = exists ? completedTaskIds.filter(id => id !== taskId) : [...completedTaskIds, taskId];
+    setCompletedTaskIds(next);
+    localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(next));
   };
 
   const resetProgress = () => {

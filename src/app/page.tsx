@@ -74,7 +74,7 @@ export default function WelcomePage() {
       {/* Clean Hero Header */}
       <div className="text-center space-y-3">
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-          Bienvenue chez <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">Data Insight</span>
+          Bienvenue chez Data Insight
         </h1>
         
         <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
@@ -134,7 +134,7 @@ export default function WelcomePage() {
               </label>
               {identifiedUser && (
                 <span className="flex items-center gap-1 text-[11px] text-brand-300 font-medium">
-                  <Database className="w-3 h-3 text-brand-400" /> Dossier RH trouvé
+                  <Database className="w-3 h-3 text-brand-400" /> Dossier salarié trouvé
                 </span>
               )}
             </div>

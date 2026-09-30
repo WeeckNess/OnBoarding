@@ -223,7 +223,7 @@ export default function ContractsPage() {
         {/* Right Column: Signature Pad & Validation Actions */}
         <div className="lg:col-span-5 space-y-6">
           
-          <div className="glass-panel p-6 rounded-3xl space-y-5 border border-white/10 shadow-xl">
+          <div data-tour="signature-panel" className="glass-panel p-6 rounded-3xl space-y-5 border border-white/10 shadow-xl">
             <div className="flex items-center gap-2 text-brand-400">
               <ShieldCheck className="w-5 h-5 text-brand-400" />
               <h2 className="text-base font-bold text-white">Apposer votre signature</h2>

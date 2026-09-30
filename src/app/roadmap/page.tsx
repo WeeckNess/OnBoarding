@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { CONTRACT_TASK_ID } from '@/lib/mockData';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ProgressBar from '@/components/ProgressBar';
 import { 
@@ -21,6 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function RoadmapPage() {
+  const router = useRouter();
   const { tasks, completedTaskIds, toggleTask, milestones, progressPercentage } = useOnboarding();
   const [selectedMilestone, setSelectedMilestone] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -107,7 +110,7 @@ export default function RoadmapPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div data-tour="roadmap-milestones" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           <button
             onClick={() => setSelectedMilestone('all')}
             className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-left cursor-pointer ${
@@ -220,7 +223,7 @@ export default function RoadmapPage() {
                       >
                         <div className="flex items-start gap-4">
                           <button
-                            onClick={() => toggleTask(task.id)}
+                            onClick={() => (task.id === CONTRACT_TASK_ID ? router.push('/contracts') : toggleTask(task.id))}
                             className="mt-0.5 shrink-0 text-slate-400 hover:text-brand-400 transition-colors cursor-pointer"
                           >
                             {isDone ? (
