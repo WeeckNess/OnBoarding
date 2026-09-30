@@ -14,6 +14,7 @@ import { buttonClass, Field, inputClass, Modal, secondaryClass } from './ui';
 export type EditorKind =
   | 'welcome'
   | 'request'
+  | 'requestStatus'
   | 'task'
   | 'goal'
   | 'meeting'
@@ -31,7 +32,7 @@ export default function RecordEditor({
   edit: EditState;
   onClose: (saved?: boolean) => void;
 }) {
-  const { mutate, saving, error, clearError } = useOnboarding();
+  const { mutate, saving, error, clearError, currentUser } = useOnboarding();
   const [localError, setLocalError] = useState('');
   const { record, kind, id } = edit;
   const request = record.requests.find((r) => r.id === id);
@@ -40,12 +41,13 @@ export default function RecordEditor({
   const meeting = record.meetings.find((m) => m.id === id);
   const titles: Record<EditorKind, string> = {
     welcome: 'Organiser le premier jour',
-    request: id ? 'Suivre la demande' : 'Préparer une demande',
+    request: id ? 'Préciser le besoin' : 'Préparer une demande',
+    requestStatus: 'Traiter la demande',
     task: id ? 'Adapter la tâche' : 'Attribuer une tâche',
     goal: id ? 'Adapter l’objectif' : 'Définir un objectif',
     meeting: meeting?.title || 'Point de suivi',
     resolve: 'Résoudre le blocage',
-    reminder: 'Ajouter un rappel',
+    reminder: 'Message pour le collaborateur',
   };
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -73,12 +75,19 @@ export default function RecordEditor({
             title: get('title'),
             details: get('details'),
             kind: get('kind') as PreparationRequest['kind'],
-            owner: get('owner') as PreparationRequest['owner'],
+            owner: (request?.owner ||
+              get('owner')) as PreparationRequest['owner'],
             dueDate: get('dueDate'),
-            status: get('status') as PreparationRequest['status'],
             blocking: values.has('blocking'),
-            note: get('note'),
           },
+        };
+        break;
+      case 'requestStatus':
+        action = {
+          type: 'request.status',
+          id: id!,
+          status: get('status') as PreparationRequest['status'],
+          note: get('note'),
         };
         break;
       case 'task':
@@ -231,11 +240,13 @@ export default function RecordEditor({
                   <select
                     name="owner"
                     defaultValue={request?.owner || 'IT'}
+                    disabled={!!request}
                     className={inputClass}
                   >
                     <option>IT</option>
-                    <option>RH</option>
-                    <option>Manager</option>
+                    {(request?.owner === 'RH' ||
+                      currentUser?.appRole === 'rh') && <option>RH</option>}
+                    {request?.owner === 'Manager' && <option>Manager</option>}
                   </select>
                 </Field>
               </div>
@@ -264,29 +275,11 @@ export default function RecordEditor({
                 {dateField(
                   request?.dueDate || addDays(record.employee.startDate, -1)
                 )}
-                <Field label="Statut">
-                  <select
-                    name="status"
-                    defaultValue={request?.status || 'requested'}
-                    className={inputClass}
-                  >
-                    {Object.entries(REQUEST_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                <div className="text-xs text-slate-400 pt-7">
+                  Le statut est confirmé par{' '}
+                  {request?.owner || 'le service responsable'}.
+                </div>
               </div>
-              <Field label="Note de suivi / cause du blocage">
-                <textarea
-                  name="note"
-                  rows={2}
-                  maxLength={1000}
-                  defaultValue={request?.note}
-                  className={inputClass}
-                />
-              </Field>
               <label className="flex gap-3 items-center text-sm">
                 <input
                   name="blocking"
@@ -297,8 +290,46 @@ export default function RecordEditor({
                 Indispensable pour travailler dès J1
               </label>
               <p className="text-xs text-slate-400">
-                Suivi manuel : enregistrez les retours de l’IT ou des RH. Aucune
+                Le service responsable reçoit ce besoin dans son espace. Toute
+                modification du besoin demande une nouvelle confirmation. Aucune
                 commande fournisseur n’est passée depuis cet écran.
+              </p>
+            </>
+          )}
+          {kind === 'requestStatus' && request && (
+            <>
+              <p className="text-sm text-white font-semibold">
+                {request.title}
+              </p>
+              <p className="text-sm text-slate-400 whitespace-pre-wrap">
+                {request.details}
+              </p>
+              <Field label="Statut confirmé par votre service">
+                <select
+                  name="status"
+                  defaultValue={request.status}
+                  className={inputClass}
+                >
+                  {Object.entries(REQUEST_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Retour partagé avec le manager et le collaborateur">
+                <textarea
+                  name="note"
+                  defaultValue={request.note}
+                  maxLength={1000}
+                  rows={3}
+                  className={inputClass}
+                  placeholder="Précisez l’avancement ou la cause du blocage…"
+                />
+              </Field>
+              <p className="text-xs text-slate-400">
+                La confirmation « Disponible » est datée et attribuée à votre
+                profil.
               </p>
             </>
           )}
@@ -329,11 +360,18 @@ export default function RecordEditor({
                     defaultValue={task?.owner || 'employee'}
                     className={inputClass}
                   >
-                    {Object.entries(OWNER_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
+                    {Object.entries(OWNER_LABELS)
+                      .filter(
+                        ([value]) =>
+                          value === 'employee' ||
+                          value ===
+                            (currentUser?.appRole === 'rh' ? 'rh' : 'manager')
+                      )
+                      .map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
                   </select>
                 </Field>
                 {dateField(task?.dueDate || record.employee.startDate)}
@@ -356,14 +394,22 @@ export default function RecordEditor({
                 <Field label="Catégorie">
                   <select
                     name="category"
-                    defaultValue={task?.category || 'project'}
+                    defaultValue={
+                      task?.category ||
+                      (currentUser?.appRole === 'rh' ? 'admin' : 'project')
+                    }
                     className={inputClass}
                   >
-                    <option value="admin">Administratif</option>
-                    <option value="tech">Technique</option>
-                    <option value="team">Équipe</option>
-                    <option value="culture">Culture</option>
-                    <option value="project">Projet</option>
+                    {currentUser?.appRole === 'rh' ? (
+                      <option value="admin">Administratif</option>
+                    ) : (
+                      <>
+                        <option value="tech">Technique</option>
+                        <option value="team">Équipe</option>
+                        <option value="culture">Culture</option>
+                        <option value="project">Projet</option>
+                      </>
+                    )}
                   </select>
                 </Field>
               </div>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Loader2, Mail, User } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { homeForRole } from '@/lib/onboarding';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -14,13 +15,7 @@ export default function WelcomePage() {
 
   useEffect(() => {
     if (isLoaded && currentUser) {
-      router.replace(
-        currentUser.appRole === 'admin'
-          ? '/admin'
-          : currentUser.appRole === 'manager'
-            ? '/manager'
-            : '/dashboard'
-      );
+      router.replace(homeForRole(currentUser.appRole));
     }
   }, [currentUser, isLoaded, router]);
 

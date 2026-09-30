@@ -17,6 +17,29 @@ export const MOCK_ADMINS: Account[] = [
   },
 ];
 
+export const MOCK_SERVICES: Account[] = [
+  {
+    ...MOCK_ADMINS[0],
+    id: 'service-rh',
+    appRole: 'rh',
+    firstName: 'Sonia',
+    lastName: '',
+    email: 'rh@datainsight.example',
+    role: 'Responsable RH',
+    department: 'Ressources humaines',
+  },
+  {
+    ...MOCK_ADMINS[0],
+    id: 'service-it',
+    appRole: 'it',
+    firstName: 'Équipe',
+    lastName: 'IT',
+    email: 'it@datainsight.example',
+    role: 'Support informatique',
+    department: 'Informatique',
+  },
+];
+
 /** Manager accounts in the local Lucca/Supabase scenario dataset. */
 export const MOCK_MANAGERS: Account[] = [
   {

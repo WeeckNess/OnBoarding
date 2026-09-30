@@ -56,6 +56,11 @@ export default function ArrivalPage() {
                 >
                   <Bell size={18} className="text-brand-400 shrink-0 mt-1" />
                   <p className="flex-1 text-sm whitespace-pre-wrap">
+                    {n.source === 'automatic' && (
+                      <span className="block mb-1 text-[10px] uppercase tracking-wider text-brand-300">
+                        Rappel automatique
+                      </span>
+                    )}
                     {n.message}
                   </p>
                   <button

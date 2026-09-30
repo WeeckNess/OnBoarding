@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ArcSidebar from './ArcSidebar';
 import OnboardingTour from './tour/OnboardingTour';
+import { homeForRole } from '@/lib/onboarding';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoaded, error, clearError, refresh } = useOnboarding();
@@ -13,18 +14,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const isManager = currentUser?.appRole === 'manager';
   const isAdmin = currentUser?.appRole === 'admin';
+  const isService = currentUser?.appRole === 'rh' || currentUser?.appRole === 'it';
+  const isEmployee = currentUser?.appRole === 'employee';
+  const home = homeForRole(currentUser?.appRole || 'employee');
   const wrongSpace =
     !!currentUser &&
     (isAdmin
       ? !pathname.startsWith('/admin') && pathname !== '/'
+      : isService
+        ? pathname !== '/operations' && pathname !== '/codex' && pathname !== '/'
       : isManager
         ? !pathname.startsWith('/manager') && pathname !== '/codex' && pathname !== '/'
-        : pathname.startsWith('/manager') || pathname.startsWith('/admin'));
+        : pathname.startsWith('/manager') || pathname.startsWith('/admin') || pathname.startsWith('/operations'));
   useEffect(() => {
     if (isLoaded && !currentUser && pathname !== '/') router.replace('/');
-    else if (wrongSpace)
-      router.replace(isAdmin ? '/admin' : isManager ? '/manager' : '/dashboard');
-  }, [isLoaded, currentUser, pathname, router, wrongSpace, isManager, isAdmin]);
+    else if (wrongSpace) router.replace(home);
+  }, [isLoaded, currentUser, pathname, router, wrongSpace, home]);
   const errorBanner = error ? (
     <div
       role="alert"
@@ -140,7 +145,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Interactive Tour Assistant */}
-      {currentUser.appRole === 'employee' && <OnboardingTour />}
+      {isEmployee && <OnboardingTour />}
     </div>
   );
 }

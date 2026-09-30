@@ -91,7 +91,7 @@ export const MILESTONES: RoadmapMilestone[] = [
     title: 'Jour 1 : Immersion & Welcome',
     subtitle: 'Bienvenue dans l’équipe !',
     daysRange: 'Jour 1',
-    description: 'Prise en main du poste de travail, signature des contrats, rencontre avec ton Buddy et premier café.',
+    description: 'Prise en main du poste de travail, rencontre avec ton Buddy et premier café.',
     iconName: 'Sparkles'
   },
   {
@@ -177,7 +177,7 @@ export const ROADMAP_TASKS: RoadmapTask[] = [
     dayNumber: 1,
     milestoneId: 'j1',
     title: 'Photo de profil & Badge de sécurité',
-    description: 'Passer voir Julie aux RH pour valider ton badge physique et mettre ta photo sur Slack / Notion.',
+    description: 'Contacter les RH pour valider ton badge physique et mettre à jour ta photo de profil.',
     estimatedMinutes: 15,
     category: 'admin'
   },
@@ -310,9 +310,9 @@ export const ROADMAP_TASKS: RoadmapTask[] = [
     dayNumber: 30,
     milestoneId: 'j30',
     title: 'Célébration du 1er Mois & Clôture de l’Onboarding',
-    description: 'Point final d’onboarding, validation de la période d’essai initiale et apéro d’équipe ! 🎉',
+    description: 'Faire le bilan d’intégration avec ton manager, définir les prochaines étapes et célébrer avec l’équipe. 🎉',
     estimatedMinutes: 60,
-    category: 'admin'
+    category: 'team'
   }
 ];
 

@@ -6,7 +6,11 @@ export async function GET() {
   try {
     const account = await getAccount();
     return Response.json(
-      { account, records: account ? await recordsFor(account) : [] },
+      {
+        account,
+        records: account ? await recordsFor(account) : [],
+        features: { demoReset: process.env.DEMO_RESET_ENABLED === 'true' },
+      },
       { headers: { 'Cache-Control': 'private, no-store' } }
     );
   } catch (error) {
