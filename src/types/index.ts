@@ -17,8 +17,9 @@ export interface Employee {
 
 export interface RoadmapTask {
   id: string;
+  dueDate?: string;
   dayNumber: number; // 1 to 30
-  milestoneId: 'j1' | 's1' | 's2' | 'j15' | 'j30';
+  milestoneId: 'prearrival' | 'j1' | 's1' | 's2' | 'j15' | 'j30';
   title: string;
   description: string;
   estimatedMinutes?: number;
@@ -28,7 +29,7 @@ export interface RoadmapTask {
 }
 
 export interface RoadmapMilestone {
-  id: 'j1' | 's1' | 's2' | 'j15' | 'j30';
+  id: 'prearrival' | 'j1' | 's1' | 's2' | 'j15' | 'j30';
   title: string;
   subtitle: string;
   daysRange: string;

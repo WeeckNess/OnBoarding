@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { CONTRACT_TASK_ID } from '@/lib/mockData';
+import { formatDate } from '@/lib/onboarding';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ProgressBar from '@/components/ProgressBar';
 import { 
@@ -23,7 +22,6 @@ import {
 } from 'lucide-react';
 
 export default function RoadmapPage() {
-  const router = useRouter();
   const { tasks, completedTaskIds, toggleTask, milestones, progressPercentage } = useOnboarding();
   const [selectedMilestone, setSelectedMilestone] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -74,7 +72,7 @@ export default function RoadmapPage() {
               <span>Programme d’intégration pas à pas</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-extrabold text-white">
-              Roadmap J+1 à 30 : Actions quotidiennes
+              Feuille de route : de la pré-arrivée à J+30
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
               Chaque étape a été pensée avec les équipes de <strong>Data Insight</strong> pour te garantir une montée en compétences progressive, sans surcharge.
@@ -110,7 +108,7 @@ export default function RoadmapPage() {
           )}
         </div>
 
-        <div data-tour="roadmap-milestones" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div data-tour="roadmap-milestones" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
           <button
             onClick={() => setSelectedMilestone('all')}
             className={`p-3.5 rounded-2xl border text-xs font-bold transition-all text-left cursor-pointer ${
@@ -120,7 +118,7 @@ export default function RoadmapPage() {
             }`}
           >
             <div className="font-extrabold">Vue Complète</div>
-            <div className="text-[10px] opacity-80 font-normal">Tous les 30 jours</div>
+            <div className="text-[10px] opacity-80 font-normal">Tout le parcours</div>
           </button>
 
           {milestones.map((m) => {
@@ -223,7 +221,10 @@ export default function RoadmapPage() {
                       >
                         <div className="flex items-start gap-4">
                           <button
-                            onClick={() => (task.id === CONTRACT_TASK_ID ? router.push('/contracts') : toggleTask(task.id))}
+                            aria-label={`Terminer ou rouvrir : ${task.title}`}
+                        disabled={task.id === "task-j1-1"}
+                        title={task.id === "task-j1-1" ? "Signature à réaliser dans Documents" : undefined}
+                        onClick={() => void toggleTask(task.id)}
                             className="mt-0.5 shrink-0 text-slate-400 hover:text-brand-400 transition-colors cursor-pointer"
                           >
                             {isDone ? (
@@ -236,7 +237,7 @@ export default function RoadmapPage() {
                           <div className="space-y-1.5">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-carbon-900 text-slate-300 border border-white/5">
-                                Jour {task.dayNumber}
+                                {task.dueDate ? formatDate(task.dueDate) : `Jour ${task.dayNumber}`}
                               </span>
                               {getCategoryBadge(task.category)}
                               {task.estimatedMinutes && (

@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { readiness } from '@/lib/onboarding';
 import { startOnboardingTour } from './tour/OnboardingTour';
-import { 
-  LayoutDashboard, 
-  MapPin, 
-  BookOpen, 
-  UserCheck, 
-  FileCheck2, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  MapPin,
+  BookOpen,
+  UserCheck,
+  FileCheck2,
+  LogOut,
   RotateCcw,
   ChevronDown,
   ChevronRight,
@@ -22,7 +23,8 @@ import {
   CheckCircle2,
   LucideIcon,
   Sparkles,
-  GraduationCap
+  GraduationCap,
+  X,
 } from 'lucide-react';
 
 interface NavItem {
@@ -45,20 +47,72 @@ interface ArcSidebarProps {
   onToggleCollapse: () => void;
 }
 
-export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebarProps) {
+export default function ArcSidebar({
+  isCollapsed,
+  onToggleCollapse,
+}: ArcSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { 
-    currentUser, 
-    logoutUser, 
-    progressPercentage, 
-    resetProgress, 
+  const {
+    currentUser,
+    logoutUser,
+    progressPercentage,
+    resetProgress,
     completedTaskIds,
-    tasks 
+    tasks,
+    records,
   } = useOnboarding();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [resetToast, setResetToast] = useState(false);
+  const menu = useRef<HTMLElement>(null);
+  const opener = useRef<HTMLButtonElement>(null);
+  const compact = isCollapsed && !isMobileOpen;
+  const isManager = currentUser?.appRole === 'manager';
+  const preparedCount = records.filter(
+    (record) => readiness(record).ready
+  ).length;
+  const spaceProgress = isManager
+    ? records.length
+      ? (preparedCount / records.length) * 100
+      : 0
+    : progressPercentage;
+  const homePath = isManager ? '/manager' : '/dashboard';
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const focusable = () =>
+      Array.from(
+        menu.current?.querySelectorAll<HTMLElement>('a, button') || []
+      ).filter(
+        (element) =>
+          element.getClientRects().length > 0 &&
+          getComputedStyle(element).visibility !== 'hidden'
+      );
+    focusable()[0]?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMobileOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusable();
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      opener.current?.focus();
+    };
+  }, [isMobileOpen]);
 
   // Dropdown accordions state (Arc spaces / folders)
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
@@ -68,7 +122,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
   });
 
   const toggleSection = (section: string) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   const handleLogout = () => {
@@ -80,80 +134,120 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
     resetProgress();
     setResetToast(true);
     setTimeout(() => setResetToast(false), 2000);
-    // Démo : on repart de zéro, visite guidée comprise.
-    router.push('/dashboard');
-    setTimeout(startOnboardingTour, 400);
+    if (!isManager) {
+      router.push('/dashboard');
+      setTimeout(startOnboardingTour, 400);
+    }
   };
 
   if (!currentUser) {
     return null;
   }
 
-  const navGroups: NavGroup[] = [
-    {
-      id: 'onboarding',
-      title: 'Mon Embarquement',
-      items: [
-        { 
-          href: '/dashboard', 
-          label: 'Tableau de bord', 
-          icon: LayoutDashboard,
-          badge: `${progressPercentage}%`
-        },
-        { 
-          href: '/contracts', 
-          label: 'Contrat & Signature', 
-          icon: FileCheck2,
-          status: currentUser?.contractSigned ? 'signed' : 'pending'
-        },
-      ]
-    },
-    {
-      id: 'roadmap',
-      title: 'Parcours J+1 à 30',
-      items: [
-        { 
-          href: '/roadmap', 
-          label: 'Feuille de route 30J', 
-          icon: MapPin,
-          badge: `${completedTaskIds.length}/${tasks.length}`
-        },
-      ]
-    },
-    {
-      id: 'resources',
-      title: 'Ressources & Équipe',
-      items: [
+  const navGroups: NavGroup[] = isManager
+    ? [
         {
-          href: '/elearning',
-          label: 'E-Learning',
-          icon: GraduationCap,
-          accent: 'gold'
+          id: 'onboarding',
+          title: 'Pilotage des arrivées',
+          items: [
+            {
+              href: '/manager',
+              label: 'Tableau de bord',
+              icon: LayoutDashboard,
+              badge: String(records.length),
+            },
+          ],
         },
-        { 
-          href: '/buddy', 
-          label: 'Mon Buddy / Parrain', 
-          icon: UserCheck,
-          accent: 'gold'
+        {
+          id: 'roadmap',
+          title: 'Mon équipe',
+          items: records.map((record) => ({
+            href: `/manager/${record.employee.id}`,
+            label: `${record.employee.firstName} ${record.employee.lastName}`,
+            icon: UserCheck,
+          })),
         },
-        { 
-          href: '/codex', 
-          label: 'Codex & Documentation', 
-          icon: BookOpen,
-          accent: 'sand'
+        {
+          id: 'resources',
+          title: 'Ressources',
+          items: [
+            { href: '/codex', label: 'Codex & Documentation', icon: BookOpen },
+          ],
         },
       ]
-    }
-  ];
+    : [
+        {
+          id: 'onboarding',
+          title: 'Mon Embarquement',
+          items: [
+            {
+              href: '/arrival',
+              label: 'Mon arrivée & mon suivi',
+              icon: UserCheck,
+            },
+            {
+              href: '/dashboard',
+              label: 'Tableau de bord',
+              icon: LayoutDashboard,
+              badge: `${progressPercentage}%`,
+            },
+            {
+              href: '/contracts',
+              label: 'Contrat & Signature',
+              icon: FileCheck2,
+              status: currentUser?.contractSigned ? 'signed' : 'pending',
+            },
+          ],
+        },
+        {
+          id: 'roadmap',
+          title: 'Parcours J+1 à 30',
+          items: [
+            {
+              href: '/roadmap',
+              label: 'Feuille de route 30J',
+              icon: MapPin,
+              badge: `${completedTaskIds.length}/${tasks.length}`,
+            },
+          ],
+        },
+        {
+          id: 'resources',
+          title: 'Ressources & Équipe',
+          items: [
+            {
+              href: '/buddy',
+              label: 'Mon Buddy / Parrain',
+              icon: UserCheck,
+              accent: 'gold',
+            },
+            {
+              href: '/elearning',
+              label: 'E-Learning',
+              icon: GraduationCap,
+              accent: 'gold',
+            },
+            {
+              href: '/codex',
+              label: 'Codex & Documentation',
+              icon: BookOpen,
+              accent: 'sand',
+            },
+          ],
+        },
+      ];
 
   return (
     <>
       {/* Mobile Top Bar with Hamburger */}
-      <div className="md:hidden sticky top-0 z-40 w-full glass-panel print:hidden border-b border-white/10 px-4 py-3 flex items-center justify-between">
+      <div className="md:hidden sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <button
+          ref={opener}
           data-tour="mobile-menu"
-          onClick={() => setIsMobileOpen(true)}
+          aria-expanded={isMobileOpen}
+          aria-controls="arc-sidebar"
           aria-label="Ouvrir le menu"
+          onClick={() => setIsMobileOpen(true)}
           className="p-2 rounded-xl bg-carbon-850 text-slate-200 border border-white/10"
         >
           <Menu className="w-5 h-5" />
@@ -165,13 +259,13 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         </div>
 
         <div className="text-xs px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/20">
-          {progressPercentage}%
+          {isManager ? `${records.length} suivis` : `${progressPercentage}%`}
         </div>
       </div>
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
@@ -179,20 +273,28 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
 
       {/* Sidebar Container */}
       <aside
-        className={`print:hidden fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
-          isCollapsed ? 'w-20 items-center' : 'w-72'
+        ref={menu}
+        id="arc-sidebar"
+        aria-label={
+          isManager ? 'Navigation manager' : 'Navigation collaborateur'
+        }
+        className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
+          compact ? 'w-20 items-center' : 'w-72'
         } ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          isMobileOpen
+            ? 'translate-x-0 visible'
+            : '-translate-x-full invisible md:translate-x-0 md:visible'
         } bg-[#141518]/95 backdrop-blur-2xl border-r border-white/10 text-slate-300 shadow-2xl`}
       >
         {/* Top Header */}
-        <div className={`w-full p-4 border-b border-white/5 ${isCollapsed ? 'flex flex-col items-center gap-3' : 'space-y-4'}`}>
-          
-          {isCollapsed ? (
+        <div
+          className={`w-full p-4 border-b border-white/5 ${compact ? 'flex flex-col items-center gap-3' : 'space-y-4'}`}
+        >
+          {compact ? (
             /* Collapsed Header: Placeholder + Toggle Button */
             <div className="flex flex-col items-center gap-3">
               <Link
-                href="/dashboard"
+                href={homePath}
                 className="w-10 h-10 rounded-2xl bg-slate-600/70 hover:scale-110 transition-transform"
                 title="Data Insight"
               >
@@ -210,8 +312,8 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
             /* Expanded Header: Placeholder + Title + Collapse Button */
             <>
               <div className="flex items-center justify-between">
-                <Link 
-                  href="/dashboard" 
+                <Link
+                  href={homePath}
                   className="flex items-center gap-3 overflow-hidden group"
                 >
                   <div aria-hidden="true" className="w-9 h-9 shrink-0 rounded-xl bg-slate-600/70 group-hover:scale-105 transition-transform" />
@@ -221,8 +323,15 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                 </Link>
 
                 <button
+                  aria-label="Fermer le menu"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-brand-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <button
                   onClick={onToggleCollapse}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-brand-300 hover:bg-white/5 transition-colors cursor-pointer"
+                  className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-brand-300 hover:bg-white/5 transition-colors cursor-pointer"
                   title="Replier le menu"
                 >
                   <PanelLeftClose className="w-4 h-4 text-slate-400" />
@@ -233,17 +342,21 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
               <div className="p-3 rounded-2xl bg-carbon-850/90 border border-white/5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    Espace Salarié
+                    {isManager ? 'Espace Manager' : 'Espace Salarié'}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
-                    {progressPercentage}% complété
+                    {isManager
+                      ? `${preparedCount}/${records.length} prêts`
+                      : `${progressPercentage}% complété`}
                   </span>
                 </div>
-                
+
                 <div className="w-full bg-carbon-900 rounded-full h-1.5 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-brand-500/30"
-                    style={{ width: `${Math.max(progressPercentage, 5)}%` }}
+                    style={{
+                      width: `${isManager ? spaceProgress : Math.max(spaceProgress, 5)}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -252,15 +365,20 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
         </div>
 
         {/* Navigation Section with Dropdown Accordions */}
-        <div data-tour="sidebar-nav" className={`flex-1 overflow-y-auto w-full p-3 space-y-4 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-          
+        <div
+          data-tour="sidebar-nav"
+          className={`flex-1 overflow-y-auto w-full p-3 space-y-4 ${compact ? 'flex flex-col items-center' : ''}`}
+        >
           {navGroups.map((group) => {
             const isOpen = openSections[group.id] ?? true;
 
             return (
-              <div key={group.id} className={`w-full space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+              <div
+                key={group.id}
+                className={`w-full space-y-1 ${compact ? 'flex flex-col items-center' : ''}`}
+              >
                 {/* Group Dropdown Header */}
-                {!isCollapsed ? (
+                {!compact ? (
                   <button
                     onClick={() => toggleSection(group.id)}
                     className="w-full flex items-center justify-between px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-brand-300 transition-colors cursor-pointer"
@@ -277,8 +395,10 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                 )}
 
                 {/* Items in this group */}
-                {(isOpen || isCollapsed) && (
-                  <div className={`space-y-1.5 ${isCollapsed ? 'flex flex-col items-center w-full' : 'w-full'}`}>
+                {(isOpen || compact) && (
+                  <div
+                    className={`space-y-1.5 ${compact ? 'flex flex-col items-center w-full' : 'w-full'}`}
+                  >
                     {group.items.map((item) => {
                       const Icon = item.icon;
                       const isActive = pathname === item.href;
@@ -289,8 +409,9 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                           href={item.href}
                           onClick={() => setIsMobileOpen(false)}
                           title={item.label}
+                          aria-current={isActive ? 'page' : undefined}
                           className={`flex items-center rounded-2xl text-xs font-medium transition-all group ${
-                            isCollapsed
+                            compact
                               ? `w-12 h-12 justify-center ${
                                   isActive
                                     ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-carbon-950 font-bold shadow-md shadow-brand-500/25 scale-105'
@@ -303,25 +424,35 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                                 }`
                           }`}
                         >
-                          <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                            isActive ? 'text-carbon-950' : 'text-slate-400 group-hover:text-brand-400'
-                          }`} />
+                          <Icon
+                            className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                              isActive
+                                ? 'text-carbon-950'
+                                : 'text-slate-400 group-hover:text-brand-400'
+                            }`}
+                          />
 
-                          {!isCollapsed && (
+                          {!compact && (
                             <div className="flex-1 flex items-center justify-between truncate">
                               <span className="truncate">{item.label}</span>
 
                               {/* Badges / statuses */}
                               {item.badge && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                                  isActive ? 'bg-carbon-950/20 text-carbon-950 font-bold' : 'bg-carbon-800 text-slate-400 border border-white/5'
-                                }`}>
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                                    isActive
+                                      ? 'bg-carbon-950/20 text-carbon-950 font-bold'
+                                      : 'bg-carbon-800 text-slate-400 border border-white/5'
+                                  }`}
+                                >
                                   {item.badge}
                                 </span>
                               )}
 
                               {item.status === 'signed' && (
-                                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-carbon-950' : 'text-emerald-400'}`} />
+                                <CheckCircle2
+                                  className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-carbon-950' : 'text-emerald-400'}`}
+                                />
                               )}
                               {item.status === 'pending' && (
                                 <span className="w-2 h-2 rounded-full bg-brand-400 shrink-0 animate-pulse" />
@@ -338,7 +469,7 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
           })}
 
           {/* Quick Codex search shortcut */}
-          {!isCollapsed && (
+          {!compact && (
             <div className="pt-2">
               <Link
                 href="/codex"
@@ -350,28 +481,31 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
               </Link>
             </div>
           )}
-
         </div>
 
         {/* Footer: User Profile & Actions */}
-        <div className={`p-3 border-t border-white/5 space-y-2 bg-[#101114] w-full ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-          
+        <div
+          className={`p-3 border-t border-white/5 space-y-2 bg-[#101114] w-full ${compact ? 'flex flex-col items-center' : ''}`}
+        >
           {resetToast && (
-            <div className="p-2 rounded-xl bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[11px] font-bold text-center animate-fade-in">
+            <div className="p-2 rounded-xl bg-brand-500/20 border border-brand-500/40 text-brand-300 text-[11px] font-bold text-center animate-in fade-in">
               ✨ Onboarding réinitialisé !
             </div>
           )}
 
           <div className="space-y-2 w-full">
-            <div className={`flex items-center p-1.5 rounded-xl hover:bg-white/5 transition-colors ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-              <div 
+            <div
+              className={`flex items-center p-1.5 rounded-xl hover:bg-white/5 transition-colors ${compact ? 'justify-center' : 'gap-3'}`}
+            >
+              <div
                 className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-carbon-950 text-xs font-black ring-2 ring-brand-500/40"
                 title={`${currentUser.firstName} ${currentUser.lastName} (${currentUser.role})`}
               >
-                {currentUser.firstName?.[0] || 'U'}{currentUser.lastName?.[0] || ''}
+                {currentUser.firstName?.[0] || 'U'}
+                {currentUser.lastName?.[0] || ''}
               </div>
 
-              {!isCollapsed && (
+              {!compact && (
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white truncate leading-tight">
                     {currentUser.firstName} {currentUser.lastName}
@@ -383,16 +517,20 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
               )}
             </div>
 
-            {!isCollapsed ? (
-              <div className="grid grid-cols-2 gap-1.5 pt-1">
-                <button
-                  onClick={handleReset}
-                  title="Réinitialiser l'onboarding pour la démo"
-                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-[11px] font-bold text-slate-300 hover:text-brand-300 border border-white/5 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3 text-brand-400" />
-                  <span>Reset</span>
-                </button>
+            {!compact ? (
+              <div
+                className={`grid ${isManager ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5 pt-1`}
+              >
+                {!isManager && (
+                  <button
+                    onClick={handleReset}
+                    title="Réinitialiser l'onboarding pour la démo"
+                    className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-[11px] font-bold text-slate-300 hover:text-brand-300 border border-white/5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3 text-brand-400" />
+                    <span>Reset</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleLogout}
@@ -400,18 +538,20 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
                   className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-[11px] font-bold text-red-300 border border-red-500/20 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3 h-3" />
-                  <span>Quitter</span>
+                  <span>{isManager ? 'Changer de profil' : 'Quitter'}</span>
                 </button>
               </div>
             ) : (
               <div className="flex flex-col gap-2 items-center pt-1">
-                <button
-                  onClick={handleReset}
-                  title="Réinitialiser l'onboarding"
-                  className="p-2.5 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-brand-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
+                {!isManager && (
+                  <button
+                    onClick={handleReset}
+                    title="Réinitialiser l'onboarding"
+                    className="p-2.5 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-brand-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                )}
 
                 <button
                   onClick={handleLogout}
@@ -424,7 +564,6 @@ export default function ArcSidebar({ isCollapsed, onToggleCollapse }: ArcSidebar
             )}
           </div>
         </div>
-
       </aside>
     </>
   );

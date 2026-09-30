@@ -124,6 +124,14 @@ export const BUDDIES_DATA: Record<string, BuddyInfo> = {
 
 export const MILESTONES: RoadmapMilestone[] = [
   {
+    id: 'prearrival',
+    title: 'Pré-arrivée : Préparer le premier jour',
+    subtitle: 'Garder le contact avant J1',
+    daysRange: 'Avant l’arrivée',
+    description: 'Informations pratiques, documents et préparation des premiers échanges.',
+    iconName: 'Sparkles'
+  },
+  {
     id: 'j1',
     title: 'Jour 1 : Immersion & Welcome',
     subtitle: 'Bienvenue dans l’équipe !',
@@ -193,7 +201,7 @@ export const ROADMAP_TASKS: RoadmapTask[] = [
     id: 'task-j1-3',
     dayNumber: 1,
     milestoneId: 'j1',
-    title: 'Café d’accueil avec Camille (Ton Buddy)',
+    title: 'Café d’accueil avec ton buddy',
     description: 'Prendre 20 minutes pour faire connaissance, poser tes questions pratiques et faire le tour du bureau.',
     estimatedMinutes: 20,
     category: 'team',

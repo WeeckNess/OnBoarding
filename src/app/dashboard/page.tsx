@@ -2,8 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { CONTRACT_TASK_ID } from '@/lib/mockData';
+import { formatDate } from '@/lib/onboarding';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ProgressBar from '@/components/ProgressBar';
 import { 
@@ -23,28 +22,14 @@ import {
   Sun
 } from 'lucide-react';
 
-/** Libellé du jour d'onboarding à partir de la date d'arrivée. */
-function getOnboardingDayLabel(startDate?: string) {
-  if (!startDate) return 'Jour 1';
-  const start = new Date(`${startDate}T00:00:00`);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.round((today.getTime() - start.getTime()) / 86_400_000);
-  if (Number.isNaN(diff)) return 'Jour 1';
-  if (diff < 0) return `Arrivée dans ${-diff} jour${diff === -1 ? '' : 's'}`;
-  if (diff >= 30) return 'Onboarding terminé';
-  return `Jour ${diff + 1}`;
-}
-
 export default function DashboardPage() {
-  const router = useRouter();
   const { 
     currentUser, 
     currentBuddy, 
     tasks, 
     completedTaskIds, 
     toggleTask,
-    codexArticles
+    progressPercentage
   } = useOnboarding();
 
   const employeeName = currentUser 
@@ -60,7 +45,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       
       {/* Welcome Banner */}
-      <div className="relative glass-panel p-6 sm:p-10 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+      <div id="tour-welcome-banner" className="relative glass-panel p-6 sm:p-10 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -68,7 +53,7 @@ export default function DashboardPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-500/15 text-brand-300 text-xs font-bold border border-brand-500/25">
               <Sun className="w-3.5 h-3.5 text-brand-400" />
-              <span>Espace Salarié • {getOnboardingDayLabel(currentUser?.startDate)}</span>
+              <span>Espace Salarié • Jour 1</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               Ravi de t’accueillir, <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-accent-sand bg-clip-text text-transparent">{employeeName}</span> ! 👋
@@ -79,7 +64,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Status summary pill */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div id="tour-contract-status" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             {!contractSigned ? (
               <Link
                 href="/contracts"
@@ -98,13 +83,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <Link href="/arrival" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-400/25 bg-brand-400/5 p-5 hover:bg-brand-400/10"><div><h2 className="font-semibold text-brand-300">Mon arrivée & mon suivi</h2><p className="text-sm text-slate-400 mt-1">Accueil, matériel, objectifs et échanges avec ton manager.</p></div><ArrowRight size={20} className="text-brand-400" /></Link>
       {/* Progress Bar Widget */}
-      <div data-tour="progress">
+      <div id="tour-progress-bar" data-tour="progress">
         <ProgressBar />
       </div>
 
       {/* Quick Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div id="tour-quick-nav" className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Card 1: Roadmap */}
         <Link href="/roadmap" className="glass-card p-6 rounded-3xl group border border-white/10 relative overflow-hidden flex flex-col justify-between">
@@ -144,7 +130,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-brand-300 font-bold pt-2 border-t border-white/5">
-            <span>{codexArticles.length} guides essentiels disponibles</span>
+            <span>5 guides essentiels disponibles</span>
           </div>
         </Link>
 
@@ -176,7 +162,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
         {/* Left: Next Tasks Checklist Card */}
-        <div data-tour="priority-tasks" className="lg:col-span-7 glass-panel p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
+        <div id="tour-priority-tasks" data-tour="priority-tasks" className="lg:col-span-7 glass-panel p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
           <div className="space-y-5">
             
             {/* Standardized Card Header */}
@@ -208,7 +194,7 @@ export default function DashboardPage() {
                 <div className="p-8 text-center text-slate-400 space-y-2">
                   <Sparkles className="w-8 h-8 text-brand-400 mx-auto animate-bounce" />
                   <p className="font-bold text-white text-sm">Toutes les actions sont complétées 🎉</p>
-                  <p className="text-xs">Tu es désormais 100% autonome sur la plateforme.</p>
+                  <p className="text-xs">Tu as terminé les actions prévues. Fais le point sur ton autonomie avec ton manager.</p>
                 </div>
               ) : (
                 nextTasks.map((task, taskIndex) => {
@@ -224,9 +210,11 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <button
-                          onClick={() => (task.id === CONTRACT_TASK_ID ? router.push('/contracts') : toggleTask(task.id))}
                           data-tour={taskIndex === 0 ? 'task-toggle' : undefined}
-                          aria-label={isCompleted ? `Marquer « ${task.title} » comme à faire` : `Marquer « ${task.title} » comme faite`}
+                          aria-label={`Terminer ou rouvrir : ${task.title}`}
+                        disabled={task.id === "task-j1-1"}
+                        title={task.id === "task-j1-1" ? "Signature à réaliser dans Documents" : undefined}
+                        onClick={() => void toggleTask(task.id)}
                           className="mt-0.5 text-slate-400 hover:text-brand-400 transition-colors cursor-pointer shrink-0"
                         >
                           {isCompleted ? (
@@ -238,7 +226,7 @@ export default function DashboardPage() {
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-500/15 text-brand-300 border border-brand-500/20 shrink-0">
-                              J{task.dayNumber}
+                              {task.dueDate ? formatDate(task.dueDate) : `J${task.dayNumber}`}
                             </span>
                             <h4 className={`text-xs font-bold truncate ${isCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
                               {task.title}
@@ -273,7 +261,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right: Buddy Card (Identical Height & Header Proportion) */}
-        <div className="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
+        <div id="tour-buddy-card" className="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
           <div className="space-y-5">
             
             {/* Standardized Card Header */}
