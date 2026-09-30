@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { readiness } from '@/lib/onboarding';
+import { readiness, homeForRole, ROLE_LABELS } from '@/lib/onboarding';
 import {
   LayoutDashboard,
   MapPin,
@@ -60,6 +60,7 @@ export default function ArcSidebar({
     completedTaskIds,
     tasks,
     records,
+    demoResetEnabled,
   } = useOnboarding();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -68,6 +69,14 @@ export default function ArcSidebar({
   const opener = useRef<HTMLButtonElement>(null);
   const compact = isCollapsed && !isMobileOpen;
   const isManager = currentUser?.appRole === 'manager';
+  const isEmployee = currentUser?.appRole === 'employee';
+  const canReset = isEmployee && demoResetEnabled;
+  const serviceRequests = records
+    .flatMap((r) => r.requests)
+    .filter((r) => r.owner === (currentUser?.appRole === 'it' ? 'IT' : 'RH'));
+  const serviceReady = serviceRequests.filter(
+    (r) => r.status === 'ready'
+  ).length;
   const preparedCount = records.filter(
     (record) => readiness(record).ready
   ).length;
@@ -75,8 +84,12 @@ export default function ArcSidebar({
     ? records.length
       ? (preparedCount / records.length) * 100
       : 0
-    : progressPercentage;
-  const homePath = isManager ? '/manager' : '/dashboard';
+    : isEmployee
+      ? progressPercentage
+      : serviceRequests.length
+        ? (serviceReady / serviceRequests.length) * 100
+        : 0;
+  const homePath = homeForRole(currentUser?.appRole || 'employee');
 
   useEffect(() => {
     if (!isMobileOpen) return;
@@ -129,10 +142,17 @@ export default function ArcSidebar({
     router.push('/');
   };
 
-  const handleReset = () => {
-    resetProgress();
-    setResetToast(true);
-    setTimeout(() => setResetToast(false), 2000);
+  const handleReset = async () => {
+    if (
+      !window.confirm(
+        'Réinitialiser ta progression et les signatures de démonstration ?'
+      )
+    )
+      return;
+    if (await resetProgress()) {
+      setResetToast(true);
+      setTimeout(() => setResetToast(false), 2000);
+    }
   };
 
   if (!currentUser) {
@@ -170,61 +190,90 @@ export default function ArcSidebar({
           ],
         },
       ]
-    : [
-        {
-          id: 'onboarding',
-          title: 'Mon Embarquement',
-          items: [
-            {
-              href: '/arrival',
-              label: 'Mon arrivée & mon suivi',
-              icon: UserCheck,
-            },
-            {
-              href: '/dashboard',
-              label: 'Tableau de bord',
-              icon: LayoutDashboard,
-              badge: `${progressPercentage}%`,
-            },
-            {
-              href: '/contracts',
-              label: 'Contrat & Signature',
-              icon: FileCheck2,
-              status: currentUser?.contractSigned ? 'signed' : 'pending',
-            },
-          ],
-        },
-        {
-          id: 'roadmap',
-          title: 'Parcours J+1 à 30',
-          items: [
-            {
-              href: '/roadmap',
-              label: 'Feuille de route 30J',
-              icon: MapPin,
-              badge: `${completedTaskIds.length}/${tasks.length}`,
-            },
-          ],
-        },
-        {
-          id: 'resources',
-          title: 'Ressources & Équipe',
-          items: [
-            {
-              href: '/buddy',
-              label: 'Mon Buddy / Parrain',
-              icon: UserCheck,
-              accent: 'gold',
-            },
-            {
-              href: '/codex',
-              label: 'Codex & Documentation',
-              icon: BookOpen,
-              accent: 'sand',
-            },
-          ],
-        },
-      ];
+    : !isEmployee
+      ? [
+          {
+            id: 'onboarding',
+            title:
+              currentUser.appRole === 'it'
+                ? 'Préparation informatique'
+                : 'Suivi administratif',
+            items: [
+              {
+                href: '/operations',
+                label: 'Demandes & actions',
+                icon: LayoutDashboard,
+                badge: String(serviceRequests.length),
+              },
+            ],
+          },
+          {
+            id: 'resources',
+            title: 'Ressources',
+            items: [
+              {
+                href: '/codex',
+                label: 'Codex & Documentation',
+                icon: BookOpen,
+              },
+            ],
+          },
+        ]
+      : [
+          {
+            id: 'onboarding',
+            title: 'Mon Embarquement',
+            items: [
+              {
+                href: '/arrival',
+                label: 'Mon arrivée & mon suivi',
+                icon: UserCheck,
+              },
+              {
+                href: '/dashboard',
+                label: 'Tableau de bord',
+                icon: LayoutDashboard,
+                badge: `${progressPercentage}%`,
+              },
+              {
+                href: '/contracts',
+                label: 'Contrat & Signature',
+                icon: FileCheck2,
+                status: currentUser?.contractSigned ? 'signed' : 'pending',
+              },
+            ],
+          },
+          {
+            id: 'roadmap',
+            title: 'De la pré-arrivée à J+30',
+            items: [
+              {
+                href: '/roadmap',
+                label: 'Feuille de route',
+                icon: MapPin,
+                badge: `${completedTaskIds.length}/${tasks.length}`,
+              },
+            ],
+          },
+          {
+            id: 'resources',
+            title: 'Ressources & Équipe',
+            items: [
+              {
+                href: '/buddy',
+                label: 'Mon Buddy / Parrain',
+                icon: UserCheck,
+                accent: 'gold',
+              },
+              {
+                href: '/codex',
+                label: 'Codex & Documentation',
+                icon: BookOpen,
+                accent: 'sand',
+              },
+            ],
+          },
+        ];
 
   return (
     <>
@@ -254,7 +303,11 @@ export default function ArcSidebar({
         </div>
 
         <div className="text-xs px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/20">
-          {isManager ? `${records.length} suivis` : `${progressPercentage}%`}
+          {isManager
+            ? `${records.length} suivis`
+            : isEmployee
+              ? `${progressPercentage}%`
+              : ROLE_LABELS[currentUser.appRole]}
         </div>
       </div>
 
@@ -270,9 +323,7 @@ export default function ArcSidebar({
       <aside
         ref={menu}
         id="arc-sidebar"
-        aria-label={
-          isManager ? 'Navigation manager' : 'Navigation collaborateur'
-        }
+        aria-label={`Navigation ${ROLE_LABELS[currentUser.appRole]}`}
         className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out flex flex-col justify-between ${
           compact ? 'w-20 items-center' : 'w-72'
         } ${
@@ -361,12 +412,14 @@ export default function ArcSidebar({
               <div className="p-3 rounded-2xl bg-carbon-850/90 border border-white/5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    {isManager ? 'Espace Manager' : 'Espace Salarié'}
+                    Espace {ROLE_LABELS[currentUser.appRole]}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 font-semibold border border-brand-500/25">
                     {isManager
                       ? `${preparedCount}/${records.length} prêts`
-                      : `${progressPercentage}% complété`}
+                      : isEmployee
+                        ? `${progressPercentage}% complété`
+                        : `${serviceReady}/${serviceRequests.length} disponibles`}
                   </span>
                 </div>
 
@@ -374,7 +427,7 @@ export default function ArcSidebar({
                   <div
                     className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-brand-500/30"
                     style={{
-                      width: `${isManager ? spaceProgress : Math.max(spaceProgress, 5)}%`,
+                      width: `${isEmployee ? Math.max(spaceProgress, 5) : spaceProgress}%`,
                     }}
                   />
                 </div>
@@ -537,16 +590,16 @@ export default function ArcSidebar({
 
             {!compact ? (
               <div
-                className={`grid ${isManager ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5 pt-1`}
+                className={`grid ${canReset ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5 pt-1`}
               >
-                {!isManager && (
+                {canReset && (
                   <button
                     onClick={handleReset}
                     title="Réinitialiser l'onboarding pour la démo"
                     className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-carbon-850 hover:bg-carbon-800 text-[11px] font-bold text-slate-300 hover:text-brand-300 border border-white/5 transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3 text-brand-400" />
-                    <span>Reset</span>
+                    <span>Reset démo</span>
                   </button>
                 )}
 
@@ -556,12 +609,12 @@ export default function ArcSidebar({
                   className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-[11px] font-bold text-red-300 border border-red-500/20 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3 h-3" />
-                  <span>{isManager ? 'Changer de profil' : 'Quitter'}</span>
+                  <span>{isEmployee ? 'Quitter' : 'Changer de profil'}</span>
                 </button>
               </div>
             ) : (
               <div className="flex flex-col gap-2 items-center pt-1">
-                {!isManager && (
+                {canReset && (
                   <button
                     onClick={handleReset}
                     title="Réinitialiser l'onboarding"

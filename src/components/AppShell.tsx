@@ -6,23 +6,28 @@ import Image from 'next/image';
 import { useOnboarding } from '@/context/OnboardingContext';
 import ArcSidebar from './ArcSidebar';
 import OnboardingTour from './OnboardingTour';
+import { homeForRole } from '@/lib/onboarding';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoaded, error, clearError, refresh } = useOnboarding();
   const pathname = usePathname();
   const router = useRouter();
   const isManager = currentUser?.appRole === 'manager';
+  const isEmployee = currentUser?.appRole === 'employee';
+  const home = homeForRole(currentUser?.appRole || 'employee');
   const wrongSpace =
     !!currentUser &&
-    (isManager
-      ? !pathname.startsWith('/manager') &&
-        pathname !== '/codex' &&
-        pathname !== '/'
-      : pathname.startsWith('/manager'));
+    pathname !== '/' &&
+    pathname !== '/codex' &&
+    (isEmployee
+      ? pathname.startsWith('/manager') || pathname.startsWith('/operations')
+      : isManager
+        ? !pathname.startsWith('/manager')
+        : pathname !== '/operations');
   useEffect(() => {
     if (isLoaded && !currentUser && pathname !== '/') router.replace('/');
-    else if (wrongSpace) router.replace(isManager ? '/manager' : '/dashboard');
-  }, [isLoaded, currentUser, pathname, router, wrongSpace, isManager]);
+    else if (wrongSpace) router.replace(home);
+  }, [isLoaded, currentUser, pathname, router, wrongSpace, home]);
   const errorBanner = error ? (
     <div
       role="alert"
@@ -162,7 +167,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Interactive Tour Assistant */}
-      {!isManager && <OnboardingTour />}
+      {isEmployee && <OnboardingTour />}
     </div>
   );
 }

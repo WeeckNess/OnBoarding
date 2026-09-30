@@ -5,6 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
+import { DatabaseSync } from 'node:sqlite';
 
 // Exercises the real Next API and SQLite store. Requires npm run build first.
 test(
@@ -19,7 +20,7 @@ test(
     const base = `http://127.0.0.1:${port}`;
     let processHandle;
     let logs = '';
-    const start = async () => {
+    const start = async (demoReset = true) => {
       processHandle = spawn(
         process.execPath,
         [
@@ -34,6 +35,7 @@ test(
           env: {
             ...process.env,
             DEMO_ACCESS_ENABLED: 'true',
+            DEMO_RESET_ENABLED: String(demoReset),
             ONBOARDING_DB_PATH: join(directory, 'test.sqlite'),
             NEXT_TELEMETRY_DISABLED: '1',
           },
@@ -113,6 +115,17 @@ test(
     const manager = await login('antoine.laurent@datainsight.io');
     const employee = await login('alexandre.moreau@datainsight.io');
     const otherEmployee = await login('thomas.legros@datainsight.io');
+    const rh = await login('rh@datainsight.io');
+    const it = await login('it@datainsight.io');
+    const requestBrief = ({
+      id,
+      kind,
+      title,
+      details,
+      owner,
+      dueDate,
+      blocking,
+    }) => ({ id, kind, title, details, owner, dueDate, blocking });
     await t.test(
       'anonymous access, manager scope and employee isolation',
       async () => {
@@ -214,7 +227,7 @@ test(
       }
     );
     await t.test(
-      'welcome, buddy and manual preparation updates are shared',
+      'manager defines the need and IT confirms readiness in its own workspace',
       async () => {
         assert.equal((await update(manager, welcome)).status, 200);
         assert.equal((await record(employee)).welcome.message, welcome.message);
@@ -230,11 +243,60 @@ test(
             await update(manager, {
               type: 'request.save',
               request: {
-                ...vpn,
+                ...requestBrief(vpn),
                 details: 'Projet Atlas, lecture des dépôts.',
-                status: 'ready',
-                note: 'Accès confirmé par IT.',
               },
+            })
+          ).status,
+          200
+        );
+        assert.equal(
+          (
+            await update(manager, {
+              type: 'request.status',
+              id: vpn.id,
+              status: 'ready',
+              note: 'Tentative',
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (
+            await update(rh, {
+              type: 'request.status',
+              id: vpn.id,
+              status: 'ready',
+              note: 'Tentative',
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (
+            await update(manager, {
+              type: 'request.save',
+              request: { ...requestBrief(vpn), status: 'ready' },
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (
+            await update(manager, {
+              type: 'request.save',
+              request: { ...requestBrief(vpn), owner: 'Manager' },
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (
+            await update(it, {
+              type: 'request.status',
+              id: vpn.id,
+              status: 'ready',
+              note: 'Accès confirmé par IT.',
             })
           ).status,
           200
@@ -242,6 +304,15 @@ test(
         assert.equal(
           (await record(employee)).requests.find((r) => r.id === vpn.id).status,
           'ready'
+        );
+        assert.equal(
+          (await record(manager)).requests.find((r) => r.id === vpn.id)
+            .validatedBy,
+          'Équipe IT'
+        );
+        assert.ok(
+          (await record(manager)).requests.find((r) => r.id === vpn.id)
+            .validatedAt
         );
         assert.equal(
           (await update(employee, { type: 'request.save', request: vpn }))
@@ -411,7 +482,9 @@ test(
           ).status,
           200
         );
-        const notification = (await record(employee)).notifications[0];
+        const notification = (await record(employee)).notifications.find(
+          (n) => !n.source
+        );
         assert.equal(notification.read, false);
         assert.equal(
           (
@@ -444,6 +517,245 @@ test(
           true
         );
         assert.ok((await record(employee)).employee.signatureImage);
+      }
+    );
+    await t.test(
+      'services receive only their required data and RH owns administrative tasks',
+      async () => {
+        const itRecord = await record(it);
+        assert.deepEqual(itRecord.goals, []);
+        assert.deepEqual(itRecord.tasks, []);
+        assert.deepEqual(itRecord.meetings, []);
+        assert.deepEqual(itRecord.documents, []);
+        assert.deepEqual(itRecord.notifications, []);
+        assert.equal(itRecord.feedback, null);
+        assert.equal(itRecord.employee.signatureImage, undefined);
+        assert.equal((await record(rh)).employee.signatureImage, undefined);
+        assert.ok(
+          (await record(rh)).tasks.every((t) => t.category === 'admin')
+        );
+        assert.ok(itRecord.requests.every((r) => r.owner === 'IT'));
+        const admin = {
+          title: 'Préparer le badge',
+          description: 'Accueil',
+          owner: 'rh',
+          dueDate: '2026-10-01',
+          category: 'admin',
+          milestoneId: 'prearrival',
+        };
+        assert.equal(
+          (
+            await update(manager, {
+              type: 'task.save',
+              task: { ...admin, owner: 'employee' },
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (await update(rh, { type: 'task.save', task: admin })).status,
+          200
+        );
+        const task = (await record(rh)).tasks.find(
+          (t) => t.title === admin.title
+        );
+        assert.equal(
+          (
+            await update(manager, {
+              type: 'task.save',
+              task: { ...task, category: 'project', owner: 'manager' },
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (await update(manager, { type: 'task.delete', id: task.id })).status,
+          403
+        );
+        assert.equal(
+          (
+            await update(employee, {
+              type: 'task.toggle',
+              id: task.id,
+              done: true,
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (await update(rh, { type: 'task.toggle', id: task.id, done: true }))
+            .status,
+          200
+        );
+        assert.equal((await update(it, welcome)).status, 403);
+        assert.equal(
+          (
+            await update(rh, {
+              type: 'task.save',
+              task: { ...admin, category: 'project', owner: 'employee' },
+            })
+          ).status,
+          403
+        );
+        const request = {
+          kind: 'hardware',
+          title: 'Badge physique',
+          details: 'Badge du bureau de Bordeaux',
+          owner: 'RH',
+          dueDate: '2026-10-01',
+          blocking: true,
+        };
+        assert.equal(
+          (await update(rh, { type: 'request.save', request })).status,
+          200
+        );
+        const badge = (await record(rh)).requests.find(
+          (r) => r.title === request.title
+        );
+        assert.equal(
+          (
+            await update(it, {
+              type: 'request.status',
+              id: badge.id,
+              status: 'ready',
+              note: '',
+            })
+          ).status,
+          403
+        );
+        assert.equal(
+          (
+            await update(rh, {
+              type: 'request.status',
+              id: badge.id,
+              status: 'ready',
+              note: 'Badge imprimé.',
+            })
+          ).status,
+          200
+        );
+        assert.equal(
+          (await record(employee)).requests.find((r) => r.id === badge.id)
+            .validatedBy,
+          'Sonia'
+        );
+        assert.ok(!(await record(it)).requests.some((r) => r.id === badge.id));
+      }
+    );
+    await t.test(
+      'changing an approved brief requires another service validation',
+      async () => {
+        const vpn = (await record(manager)).requests.find(
+          (r) => r.kind === 'access'
+        );
+        assert.equal(vpn.status, 'ready');
+        assert.equal(
+          (
+            await update(manager, {
+              type: 'request.save',
+              request: {
+                ...requestBrief(vpn),
+                details: 'Atlas et Orion, lecture seule.',
+              },
+            })
+          ).status,
+          200
+        );
+        const changed = (await record(manager)).requests.find(
+          (r) => r.id === vpn.id
+        );
+        assert.equal(changed.status, 'requested');
+        assert.equal(changed.validatedAt, undefined);
+        assert.equal(changed.validatedBy, undefined);
+        assert.equal(
+          (
+            await update(it, {
+              type: 'request.status',
+              id: vpn.id,
+              status: 'blocked',
+              note: '',
+            })
+          ).status,
+          400
+        );
+        assert.equal(
+          (
+            await update(it, {
+              type: 'request.status',
+              id: vpn.id,
+              status: 'ready',
+              note: 'Nouveau périmètre activé.',
+            })
+          ).status,
+          200
+        );
+      }
+    );
+    await t.test(
+      'automatic reminders are deduplicated, acknowledged persistently and removed on completion',
+      async () => {
+        const task = {
+          title: 'Vérifier les accès de test',
+          description: '',
+          owner: 'employee',
+          dueDate: '2020-01-01',
+          category: 'tech',
+          milestoneId: 'j1',
+        };
+        assert.equal(
+          (await update(manager, { type: 'task.save', task })).status,
+          200
+        );
+        const first = await record(employee);
+        const assigned = first.tasks.find((t) => t.title === task.title);
+        const notice = first.notifications.find(
+          (n) => n.source === 'automatic' && n.id.includes(assigned.id)
+        );
+        assert.ok(notice);
+        assert.equal(notice.read, false);
+        const second = await record(employee);
+        assert.deepEqual(second.notifications, first.notifications);
+        assert.equal(second.version, first.version);
+        assert.equal(
+          (await update(employee, { type: 'notification.read', id: notice.id }))
+            .status,
+          200
+        );
+        assert.equal(
+          (await record(employee)).notifications.find((n) => n.id === notice.id)
+            .read,
+          true
+        );
+        assert.equal((await record(employee)).version, first.version);
+        assert.equal(
+          (
+            await update(employee, {
+              type: 'notification.read',
+              id: 'auto:unknown',
+            })
+          ).status,
+          404
+        );
+        assert.ok(
+          !(await record(manager)).notifications.some(
+            (n) => n.source === 'automatic'
+          )
+        );
+        assert.equal(
+          (
+            await update(employee, {
+              type: 'task.toggle',
+              id: assigned.id,
+              done: true,
+            })
+          ).status,
+          200
+        );
+        assert.ok(
+          !(await record(employee)).notifications.some(
+            (n) => n.id === notice.id
+          )
+        );
       }
     );
     await t.test(
@@ -486,7 +798,11 @@ test(
         const after = await record(employee);
         assert.equal(after.employee.contractSigned, false);
         assert.equal(after.employee.signatureImage, undefined);
-        assert.deepEqual(after.employee.completedTaskIds, []);
+        assert.ok(
+          after.employee.completedTaskIds.every(
+            (id) => after.tasks.find((t) => t.id === id)?.owner !== 'employee'
+          )
+        );
         assert.deepEqual(after.requests, before.requests);
         assert.deepEqual(after.goals, before.goals);
         assert.deepEqual(await record(otherEmployee, 'emp-02'), otherBefore);
@@ -495,6 +811,79 @@ test(
           200
         );
         assert.equal((await workspace(employee)).account, null);
+      }
+    );
+    await t.test(
+      'reset is rejected when the dedicated demo flag is off',
+      async () => {
+        await stop();
+        await start(false);
+        const before = await record(otherEmployee, 'emp-02');
+        assert.equal(
+          (await workspace(otherEmployee)).features.demoReset,
+          false
+        );
+        assert.equal(
+          (await update(otherEmployee, { type: 'reset' }, 'emp-02')).status,
+          403
+        );
+        assert.deepEqual(await record(otherEmployee, 'emp-02'), before);
+      }
+    );
+    await t.test(
+      'existing dossiers migrate once without losing preparation or feedback',
+      async () => {
+        await stop();
+        const db = new DatabaseSync(join(directory, 'test.sqlite'));
+        const row = db
+          .prepare('SELECT data FROM onboardings WHERE id = ?')
+          .get('emp-01');
+        const legacy = JSON.parse(row.data);
+        const signature = legacy.tasks.find((t) => t.id === 'task-j1-1');
+        signature.milestoneId = 'j1';
+        signature.dayNumber = 1;
+        signature.dueDate = legacy.employee.startDate;
+        legacy.tasks.find((t) => t.id === 'task-j30-3').category = 'admin';
+        const vpn = legacy.requests.find((r) => r.kind === 'access');
+        vpn.status = 'ready';
+        delete vpn.validatedBy;
+        delete vpn.validatedAt;
+        db.prepare('UPDATE onboardings SET data = ? WHERE id = ?').run(
+          JSON.stringify(legacy),
+          'emp-01'
+        );
+        db.prepare('DELETE FROM schema_updates WHERE id = ?').run(
+          'role-boundaries-v1'
+        );
+        db.prepare('DELETE FROM schema_updates WHERE id = ?').run(
+          'prototype-role-content-v1'
+        );
+        db.close();
+        await start(false);
+        const after = await record(manager);
+        assert.equal(after.version, legacy.version + 2);
+        assert.equal(
+          after.tasks.find((t) => t.id === 'task-j30-3').category,
+          'team'
+        );
+        assert.equal(
+          after.tasks.find((t) => t.id === 'task-j1-1').milestoneId,
+          'prearrival'
+        );
+        assert.ok(
+          after.tasks.find((t) => t.id === 'task-j1-1').dueDate <
+            after.employee.startDate
+        );
+        assert.equal(
+          after.requests.find((r) => r.id === vpn.id).status,
+          'requested'
+        );
+        assert.deepEqual(after.welcome, legacy.welcome);
+        assert.deepEqual(after.feedback, legacy.feedback);
+        assert.deepEqual(after.goals, legacy.goals);
+        await stop();
+        await start(false);
+        assert.deepEqual(await record(manager), after);
       }
     );
   }

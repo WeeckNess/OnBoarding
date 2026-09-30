@@ -35,7 +35,7 @@ interface OnboardingContextType {
   logoutUser: () => Promise<void>;
   signContract: (signatureImage: string) => Promise<boolean>;
   toggleTask: (taskId: string) => Promise<boolean>;
-  resetProgress: () => Promise<void>;
+  resetProgress: () => Promise<boolean>;
   mutate: (
     id: string,
     action: OnboardingAction,
@@ -46,6 +46,7 @@ interface OnboardingContextType {
   clearError: () => void;
   saving: boolean;
   isLoaded: boolean;
+  demoResetEnabled: boolean;
 }
 const OnboardingContext = createContext<OnboardingContextType | undefined>(
   undefined
@@ -190,8 +191,11 @@ export function OnboardingProvider({
     if (
       currentRecord &&
       (await mutate(currentRecord.employee.id, { type: 'reset' }))
-    )
+    ) {
       localStorage.removeItem('midi_onboarding_tour_completed');
+      return true;
+    }
+    return false;
   };
   return (
     <OnboardingContext.Provider
@@ -220,6 +224,7 @@ export function OnboardingProvider({
         clearError: () => setError(''),
         saving,
         isLoaded,
+        demoResetEnabled: workspace.features?.demoReset === true,
       }}
     >
       {children}

@@ -30,3 +30,27 @@ export const DEMO_MANAGERS: Account[] = [
     completedTaskIds: [],
   },
 ];
+
+export const DEMO_SERVICES: Account[] = [
+  {
+    ...DEMO_MANAGERS[0],
+    id: 'service-rh',
+    appRole: 'rh',
+    firstName: 'Sonia',
+    lastName: '',
+    email: 'rh@datainsight.io',
+    role: 'Responsable RH',
+    department: 'Ressources humaines',
+  },
+  {
+    ...DEMO_MANAGERS[0],
+    id: 'service-it',
+    appRole: 'it',
+    firstName: 'Équipe',
+    lastName: 'IT',
+    email: 'it@datainsight.io',
+    role: 'Support informatique',
+    department: 'Informatique',
+  },
+];
+export const DEMO_STAFF = [...DEMO_MANAGERS, ...DEMO_SERVICES];

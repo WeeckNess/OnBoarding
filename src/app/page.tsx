@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { INITIAL_EMPLOYEES } from '@/lib/mockData';
-import { DEMO_MANAGERS } from '@/lib/demoAccounts';
+import { DEMO_MANAGERS, DEMO_SERVICES } from '@/lib/demoAccounts';
+import { homeForRole } from '@/lib/onboarding';
 import { ArrowRight, Database, User, Mail, Loader2 } from 'lucide-react';
 
 export default function WelcomePage() {
@@ -22,9 +23,7 @@ export default function WelcomePage() {
   // If already logged in, immediately redirect to /dashboard
   useEffect(() => {
     if (isLoaded && currentUser) {
-      router.replace(
-        currentUser.appRole === 'manager' ? '/manager' : '/dashboard'
-      );
+      router.replace(homeForRole(currentUser.appRole));
     }
   }, [currentUser, isLoaded, router]);
 
@@ -124,6 +123,42 @@ export default function WelcomePage() {
           Démonstration avec profils fictifs, sans mot de passe. N’utilisez pas
           de données personnelles réelles.
         </p>
+      </section>
+      <section
+        aria-label="Accès RH et IT"
+        className="glass-panel p-6 rounded-3xl space-y-4"
+      >
+        <div>
+          <p className="text-xs uppercase tracking-widest text-brand-400 mb-2">
+            Préparation & traitement
+          </p>
+          <h2 className="text-xl font-bold">
+            Valider les demandes de mon service
+          </h2>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {DEMO_SERVICES.map((service) => (
+            <button
+              key={service.id}
+              disabled={loading}
+              className="text-left p-4 rounded-xl bg-carbon-850 border border-white/10 hover:border-brand-400/30 disabled:opacity-50"
+              onClick={async () => {
+                setLoading(true);
+                await loginUser(service.email);
+                setLoading(false);
+              }}
+            >
+              <strong className="block text-brand-300">
+                {service.appRole === 'rh' ? 'Sonia · RH' : 'Équipe IT'} →
+              </strong>
+              <span className="text-sm text-slate-300">
+                {service.appRole === 'rh'
+                  ? 'Administratif et préparation'
+                  : 'Matériel et accès informatiques'}
+              </span>
+            </button>
+          ))}
+        </div>
       </section>
       {/* Main Form Card */}
       <div className="glass-panel p-6 sm:p-10 rounded-3xl space-y-8 relative overflow-hidden shadow-2xl border border-white/10">

@@ -11,12 +11,12 @@ export default function ProgressBar() {
 
   return (
     <div className="glass-panel p-5 sm:p-6 rounded-3xl space-y-4 border border-white/10 shadow-lg">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
             <span>Progression de l’Intégration</span>
             <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/25">
-              30 Jours
+              Pré-arrivée · J+30
             </span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -34,13 +34,14 @@ export default function ProgressBar() {
       <div className="w-full bg-carbon-900 rounded-full h-3 overflow-hidden p-0.5 border border-white/5">
         <div
           className="bg-gradient-to-r from-brand-600 via-brand-500 to-brand-300 h-full rounded-full transition-all duration-500 shadow-sm shadow-brand-500/30"
-          style={{ width: `${Math.max(progressPercentage, 4)}%` }}
+          style={{ width: `${progressPercentage}%` }}
         />
       </div>
 
       {/* Mini milestones indicators */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 pt-1 text-center">
         {[
+          { label: 'Avant J1', id: 'prearrival' },
           { label: 'J1 : Welcome', id: 'j1' },
           { label: 'S1 : Setup', id: 's1' },
           { label: 'S2 : 1ère PR', id: 's2' },
