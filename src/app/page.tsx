@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Loader2, Mail, User } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Loader2, Mail, ShieldCheck, User, UserRound } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 
 export default function WelcomePage() {
   const router = useRouter();
-  const { loginUser, currentUser, isLoaded } = useOnboarding();
+  const { loginUser, currentUser, isLoaded, demoProfileSwitchEnabled } = useOnboarding();
   const [email, setEmail] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,6 +23,16 @@ export default function WelcomePage() {
       );
     }
   }, [currentUser, isLoaded, router]);
+
+  const handleQuickLogin = async (profile: { email: string; label: string }) => {
+    setLoading(true);
+    setNotice('');
+    const result = await loginUser(profile.email);
+    if (!result.success) {
+      setNotice(result.message || `Connexion au profil ${profile.label} impossible.`);
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -92,6 +102,45 @@ export default function WelcomePage() {
               />
             </div>
           </div>
+
+          {demoProfileSwitchEnabled && (
+            <div className="rounded-2xl border border-brand-500/20 bg-carbon-900/70 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold text-white">Accès rapides de démonstration</p>
+                  <p className="mt-1 text-[11px] text-slate-400">Choisissez un espace pour ouvrir directement le profil correspondant.</p>
+                </div>
+                {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-brand-300" />}
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {[
+                  { label: 'RH', subtitle: 'Sonia · Administration', email: 'sonia.mercier@datainsight.example', icon: ShieldCheck },
+                  { label: 'Manager', subtitle: 'Antoine · Data Platform', email: 'antoine.laurent@datainsight.example', icon: BriefcaseBusiness },
+                  { label: 'Salarié', subtitle: 'Léa · Data Engineer', email: 'lea.martin.01@datainsight.example', icon: UserRound },
+                ].map((profile) => {
+                  const Icon = profile.icon;
+                  return (
+                    <button
+                      key={profile.label}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => void handleQuickLogin(profile)}
+                      className="group flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-carbon-850/80 px-3 py-3 text-left transition-colors hover:border-brand-400/50 hover:bg-brand-500/10 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 text-brand-300 transition-colors group-hover:bg-brand-500/15">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs font-bold text-white">{profile.label}</span>
+                        <span className="mt-0.5 block truncate text-[10px] text-slate-400">{profile.subtitle}</span>
+                      </span>
+                      <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-500 transition-colors group-hover:text-brand-300" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {notice && <p role="status" className="text-sm text-amber-200">{notice}</p>}
 

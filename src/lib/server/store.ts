@@ -115,6 +115,7 @@ function newRecord(person: LuccaMockPerson): OnboardingRecord {
       owner: 'employee' as const,
       dueDate: addDays(person.startDate, task.dayNumber - 1),
     })),
+    elearningSessions: [],
     goals: [],
     meetings: [1, 7, 30].map((day) => ({
       id: `meeting-${day}`,
@@ -232,6 +233,7 @@ function remoteRecord(row: Record<string, any>, signature?: Record<string, any>)
     requests: row.requests || [],
     documents: row.documents || [],
     tasks: row.tasks || [],
+    elearningSessions: row.elearning_sessions || [],
     goals: row.goals || [],
     meetings: row.meetings || [],
     blockers: row.blockers || [],
@@ -239,6 +241,26 @@ function remoteRecord(row: Record<string, any>, signature?: Record<string, any>)
     notifications: row.notifications || [],
     activity: row.activity || [],
   };
+}
+
+let warnedMissingNotificationReads = false;
+
+function isMissingNotificationReads(error: { message: string; code?: string } | null) {
+  if (!error) return false;
+  return (
+    error.code === 'PGRST205' ||
+    error.code === '42P01' ||
+    (error.message.toLowerCase().includes('notification_reads') &&
+      /schema cache|does not exist|could not find/i.test(error.message))
+  );
+}
+
+function warnMissingNotificationReads() {
+  if (warnedMissingNotificationReads) return;
+  warnedMissingNotificationReads = true;
+  console.warn(
+    'Supabase table notification_reads is missing; automatic reminder reads will not persist until migrations are applied.'
+  );
 }
 
 function throwSupabase(error: { message: string; code?: string } | null): asserts error is null {
@@ -281,6 +303,40 @@ export function visibleRecord(
   const result = structuredClone(record);
   // Non-employee portals receive document status only, never signature images.
   if (account.appRole !== 'employee') delete result.employee.signatureImage;
+  if (account.appRole !== 'employee')
+    result.documents.forEach((document) => delete document.signatureData);
+  const buddy = BUDDIES_DATA[result.employee.buddyId];
+  const buddyTask = result.tasks.find((task) => task.id === 'task-j1-3');
+  if (buddyTask && ['Café d’accueil avec Camille (Ton Buddy)', 'Café d’accueil avec ton buddy'].includes(buddyTask.title))
+    buddyTask.title = buddy ? `Café d’accueil avec ${buddy.name}` : 'Café d’accueil avec ton buddy';
+  if (account.appRole === 'employee') {
+    const reminders = automaticReminders(result);
+    const read = new Set<string>(supabaseIsConfigured() ? [] :
+      database().prepare('SELECT notification_id FROM notification_reads WHERE account_id = ?')
+        .all(account.id).map((row) => (row as { notification_id: string }).notification_id));
+    result.notifications = [...reminders.map((notification) => ({ ...notification, read: read.has(notification.id) })), ...result.notifications];
+  }
+  if (account.appRole === 'rh' || account.appRole === 'it') {
+    result.goals = [];
+    result.meetings = [];
+    result.feedback = null;
+    result.blockers = [];
+    result.notifications = [];
+    result.activity = [];
+    result.welcome = { host: '', location: record.welcome.location, time: '', message: '' };
+    result.employee.buddyId = '';
+    if (account.appRole === 'it') {
+      result.requests = result.requests.filter((request) => request.owner === 'IT');
+      result.documents = [];
+      result.tasks = [];
+      result.employee.completedTaskIds = [];
+      result.employee.contractSigned = false;
+      delete result.employee.signatureDate;
+    } else {
+      result.tasks = result.tasks.filter((task) => task.category === 'admin');
+      result.employee.completedTaskIds = result.employee.completedTaskIds.filter((id) => result.tasks.some((task) => task.id === id));
+    }
+  }
   return result;
 }
 export async function recordsFor(account: Account): Promise<OnboardingRecord[]> {
@@ -300,7 +356,26 @@ export async function recordsFor(account: Account): Promise<OnboardingRecord[]> 
       : { data: [], error: null };
     throwSupabase(signatures.error);
     const byEmployee = new Map((signatures.data || []).map((row) => [row.employee_id, row]));
-    return (data || []).map((row) => visibleRecord(account, remoteRecord(row, byEmployee.get(row.employee_id))));
+    const visible = (data || [])
+      .map((row) => remoteRecord(row, byEmployee.get(row.employee_id)))
+      .filter((record) => account.appRole !== 'it' || record.requests.some((request) => request.owner === 'IT'))
+      .map((record) => visibleRecord(account, record));
+    if (account.appRole === 'employee') {
+      const { data: readRows, error: readError } = await client.from('notification_reads')
+        .select('notification_id').eq('account_id', account.id);
+      if (isMissingNotificationReads(readError)) warnMissingNotificationReads();
+      else throwSupabase(readError);
+      const read = new Set((readRows || []).map((row) => row.notification_id));
+      return visible.map((record) => ({
+        ...record,
+        notifications: record.notifications.map((notification) =>
+          notification.source === 'automatic'
+            ? { ...notification, read: read.has(notification.id) }
+            : notification
+        ),
+      }));
+    }
+    return visible;
   }
   const rows =
     account.appRole === 'admin'
@@ -332,6 +407,9 @@ export async function saveRecord(record: OnboardingRecord, expectedVersion: numb
       requests: record.requests,
       documents: record.documents,
       tasks: record.tasks,
+      ...((record.elearningSessions || []).length
+        ? { elearning_sessions: record.elearningSessions }
+        : {}),
       completed_task_ids: record.employee.completedTaskIds,
       goals: record.goals,
       meetings: record.meetings,
@@ -494,4 +572,22 @@ export async function deleteSession(token: string | undefined) {
     database()
       .prepare('DELETE FROM sessions WHERE token_hash = ?')
       .run(hash(token));
+}
+
+export async function markAutomaticReminderRead(account: Account, record: OnboardingRecord, id: string) {
+  if (!automaticReminders(record).some((notification) => notification.id === id))
+    throw new HttpError(404, 'Rappel introuvable.');
+  if (supabaseIsConfigured()) {
+    const { error } = await supabaseAdmin().from('notification_reads').upsert({
+      account_id: account.id,
+      notification_id: id,
+    });
+    if (isMissingNotificationReads(error)) {
+      warnMissingNotificationReads();
+      return;
+    }
+    throwSupabase(error);
+    return;
+  }
+  database().prepare('INSERT OR IGNORE INTO notification_reads VALUES (?, ?)').run(account.id, id);
 }

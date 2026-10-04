@@ -42,6 +42,8 @@ interface OnboardingContextType {
   clearError: () => void;
   saving: boolean;
   isLoaded: boolean;
+  demoResetEnabled: boolean;
+  demoProfileSwitchEnabled: boolean;
 }
 const OnboardingContext = createContext<OnboardingContextType | undefined>(
   undefined
@@ -229,6 +231,8 @@ export function OnboardingProvider({
         clearError: () => setError(''),
         saving,
         isLoaded,
+        demoResetEnabled: workspace.features?.demoReset === true,
+        demoProfileSwitchEnabled: workspace.features?.profileSwitch === true,
       }}
     >
       {children}

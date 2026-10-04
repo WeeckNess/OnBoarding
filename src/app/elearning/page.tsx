@@ -12,7 +12,9 @@ import {
   Sparkles,
   Video,
   X,
+  ExternalLink,
 } from 'lucide-react';
+import { useOnboarding } from '@/context/OnboardingContext';
 
 type Question = {
   prompt: string;
@@ -94,6 +96,7 @@ const MODULES: Module[] = [
 ];
 
 export default function ElearningPage() {
+  const { currentRecord, mutate, saving } = useOnboarding();
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [mode, setMode] = useState<'video' | 'quiz'>('video');
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -149,6 +152,34 @@ export default function ElearningPage() {
           </div>
         </div>
       </header>
+
+      {(currentRecord?.elearningSessions || []).length > 0 && (
+        <section className="space-y-4" aria-labelledby="assigned-sessions-title">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-400">Ajoutées par ton manager</p>
+            <h2 id="assigned-sessions-title" className="mt-1 text-xl font-extrabold text-white">Tes sessions</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(currentRecord?.elearningSessions || []).map((session) => (
+              <article key={session.id} className="glass-panel rounded-3xl border border-white/10 p-5 shadow-lg">
+                <div className="flex items-start justify-between gap-3">
+                  <div><p className="text-[10px] font-bold uppercase tracking-wide text-brand-300">{session.category}</p><h3 className="mt-2 text-base font-bold text-white">{session.title}</h3></div>
+                  {session.completedAt && <span className="shrink-0 rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300">Terminée</span>}
+                </div>
+                {session.description && <p className="mt-2 text-xs leading-relaxed text-slate-400">{session.description}</p>}
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                  {session.durationMinutes && <span>{session.durationMinutes} min</span>}
+                  {session.dueDate && <span>À faire avant le {new Date(`${session.dueDate}T12:00:00`).toLocaleDateString('fr-FR')}</span>}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {session.resourceUrl && <a href={session.resourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-brand-500/30 hover:text-brand-300">Ouvrir le contenu <ExternalLink size={13} /></a>}
+                  {!session.completedAt && <button disabled={saving} onClick={() => currentRecord && void mutate(currentRecord.employee.id, { type: 'elearning.session.complete', id: session.id }, currentRecord.version)} className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-100 px-3 py-2 text-xs font-bold text-carbon-950 disabled:opacity-50"><Check size={13} /> Marquer comme terminée</button>}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4" aria-labelledby="modules-title">
         <div className="flex items-end justify-between gap-4">

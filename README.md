@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Ouvrir http://localhost:3000 et saisir manuellement l’adresse email associée à une fiche. Les profils managers sont listés dans [la documentation technique](docs/INTEGRATION_LUCCA_SUPABASE.md). Les adresses des 50 salariés sont générées dans `src/lib/integrations/lucca/mockDirectory.ts` et utilisent le domaine réservé `.example`.
+Ouvrir http://localhost:3000 et saisir manuellement l’adresse email associée à une fiche. Les profils managers sont listés dans [la documentation technique](docs/INTEGRATION_LUCCA_SUPABASE.md). L’écran de connexion propose des boutons d’accès rapide aux profils de démonstration RH, manager et salarié. Ils sont visibles en développement ; en production, activez-les explicitement avec `DEMO_PROFILE_SWITCH_ENABLED=true` (et gardez `DEMO_ACCESS_ENABLED` actif). Les adresses des 50 salariés sont générées dans `src/lib/integrations/lucca/mockDirectory.ts` et utilisent le domaine réservé `.example`.
 
 Sans identifiants Supabase, au premier accès, l’annuaire simulé charge 50 personnes et crée leurs dossiers d’intégration dans `.data/onboarding-supabase-mock.sqlite`. Les dossiers restent partagés entre les espaces manager et salarié. La base précédente, `.data/onboarding.sqlite`, n’est pas modifiée.
 

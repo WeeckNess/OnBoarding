@@ -18,6 +18,7 @@ import { Avatar, Badge, Empty, Panel } from '@/components/manager/ui';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { formatDate } from '@/lib/onboarding';
 import { getHrCompliance, HR_COMPLIANCE_ITEMS, missingComplianceCount, openBlockingRequests } from '@/lib/admin';
+import DocumentDispatch from '@/components/manager/DocumentDispatch';
 
 export default function AdminPersonPage() {
   const params = useParams<{ id: string }>();
@@ -71,6 +72,10 @@ export default function AdminPersonPage() {
           </div>
         </Panel>
       </section>
+
+      <Panel title="Documents à envoyer pour signature" description="Ajoutez un texte ou un lien, puis suivez la signature du salarié." icon={FileCheck2}>
+        <DocumentDispatch record={record} />
+      </Panel>
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Panel title="Jalons et tâches" description="Progression du salarié et actions attendues du manager" icon={ClipboardList}>

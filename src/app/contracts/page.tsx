@@ -15,12 +15,13 @@ import {
   FileText,
   Lock,
   Sparkles,
-  Calendar
+  Calendar,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function ContractsPage() {
   const router = useRouter();
-  const { currentUser, signContract } = useOnboarding();
+  const { currentUser, currentRecord, signContract, mutate, saving } = useOnboarding();
   const [signatureData, setSignatureData] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'contract' | 'nda'>('contract');
@@ -57,6 +58,8 @@ export default function ContractsPage() {
   const employeeEmail = currentUser?.email || 'lea.martin.01@datainsight.example';
   const employeeRole = currentUser?.role || 'Data Engineer Junior';
   const employeeDept = currentUser?.department || 'Data Platform';
+  const requestedDocuments = (currentRecord?.documents || []).filter((document) => !['contract', 'nda'].includes(document.id));
+  const pendingDocuments = requestedDocuments.filter((document) => document.status === 'pending');
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-2">
@@ -310,6 +313,23 @@ export default function ContractsPage() {
         </div>
 
       </div>
+
+      {requestedDocuments.length > 0 && (
+        <section className="space-y-5 rounded-3xl border border-white/10 bg-carbon-900/60 p-5 sm:p-7" aria-labelledby="requested-documents-title">
+          <div><p className="text-[10px] font-bold uppercase tracking-widest text-brand-400">Documents transmis par le manager ou les RH</p><h2 id="requested-documents-title" className="mt-1 text-xl font-extrabold text-white">Documents à signer</h2><p className="mt-2 text-xs text-slate-400">Lis chaque document ou ouvre son lien avant de le signer.</p></div>
+          {pendingDocuments.length > 0 && <div className="max-w-xl"><SignatureCanvas onSave={handleSignatureSave} initialSignature={signatureData || currentUser?.signatureImage} /></div>}
+          <div className="grid gap-4 md:grid-cols-2">
+            {requestedDocuments.map((document) => (
+              <article key={document.id} className="rounded-2xl border border-white/10 bg-carbon-850 p-5">
+                <div className="flex items-start justify-between gap-3"><h3 className="text-sm font-bold text-white">{document.title}</h3><span className={`shrink-0 text-[10px] font-bold ${document.status === 'signed' ? 'text-emerald-300' : 'text-amber-300'}`}>{document.status === 'signed' ? `Signé le ${document.signedAt ? new Date(document.signedAt).toLocaleDateString('fr-FR') : '—'}` : 'À signer'}</span></div>
+                {document.description && <p className="mt-3 whitespace-pre-wrap text-xs leading-relaxed text-slate-300">{document.description}</p>}
+                {document.resourceUrl && <a href={document.resourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-300 hover:text-white">Ouvrir le document <ExternalLink size={13} /></a>}
+                {document.status === 'pending' && <button type="button" disabled={saving || !(signatureData || currentUser?.signatureImage)} onClick={() => currentRecord && void mutate(currentRecord.employee.id, { type: 'document.sign', id: document.id, signatureImage: signatureData || currentUser?.signatureImage || '' }, currentRecord.version)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-4 py-2.5 text-xs font-bold text-carbon-950 disabled:opacity-40">{saving ? 'Enregistrement…' : 'Signer ce document'}</button>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
     </div>
   );

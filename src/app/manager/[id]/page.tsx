@@ -27,6 +27,7 @@ import {
   Star,
   X,
   Building2,
+  GraduationCap,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { BUDDIES_DATA } from '@/lib/mockData';
@@ -52,6 +53,7 @@ import RecordEditor, {
   EditState,
   EditorKind,
 } from '@/components/manager/RecordEditor';
+import DocumentDispatch from '@/components/manager/DocumentDispatch';
 
 export default function ManagerDetail({
   params,
@@ -75,6 +77,12 @@ export default function ManagerDetail({
   const [edit, setEdit] = useState<EditState | null>(null);
   const [saved, setSaved] = useState(false);
   const [taskOwner, setTaskOwner] = useState('all');
+  const [sessionTitle, setSessionTitle] = useState('');
+  const [sessionDescription, setSessionDescription] = useState('');
+  const [sessionCategory, setSessionCategory] = useState('Général');
+  const [sessionDuration, setSessionDuration] = useState('');
+  const [sessionUrl, setSessionUrl] = useState('');
+  const [sessionDueDate, setSessionDueDate] = useState('');
   const record = records.find((r) => r.employee.id === id);
   if (!isLoaded || currentUser?.appRole !== 'manager') return null;
   if (!record)
@@ -219,6 +227,7 @@ export default function ManagerDetail({
       >
         {[
           { id: 'preparation', label: 'Préparation', icon: Laptop },
+          { id: 'elearning', label: 'E-learning', icon: GraduationCap },
           {
             id: 'parcours',
             label: 'Parcours & objectifs',
@@ -630,6 +639,47 @@ export default function ManagerDetail({
         </div>
       )}
 
+      {tab === 'elearning' && (
+        <Panel title="Sessions E-learning" description={`Contenus à suivre par ${employee.firstName}`} icon={GraduationCap}>
+          <form className="mb-7 grid gap-3 rounded-2xl border border-white/10 bg-carbon-900/60 p-4 sm:grid-cols-2" onSubmit={async (event) => {
+            event.preventDefault();
+            const ok = await mutate(record.employee.id, {
+              type: 'elearning.session.add',
+              session: {
+                title: sessionTitle,
+                description: sessionDescription,
+                category: sessionCategory,
+                durationMinutes: sessionDuration ? Number(sessionDuration) : null,
+                resourceUrl: sessionUrl,
+                dueDate: sessionDueDate,
+              },
+            }, record.version);
+            if (ok) {
+              setSessionTitle(''); setSessionDescription(''); setSessionCategory('Général');
+              setSessionDuration(''); setSessionUrl(''); setSessionDueDate(''); setSaved(true);
+            }
+          }}>
+            <label className="text-xs text-slate-300">Titre *<input required maxLength={150} value={sessionTitle} onChange={(e) => setSessionTitle(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-sm text-white" placeholder="Ex. Sécurité des données" /></label>
+            <label className="text-xs text-slate-300">Thème<input maxLength={100} value={sessionCategory} onChange={(e) => setSessionCategory(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-sm text-white" /></label>
+            <label className="text-xs text-slate-300 sm:col-span-2">Description<textarea maxLength={2000} value={sessionDescription} onChange={(e) => setSessionDescription(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-sm text-white" rows={2} placeholder="Ce que le salarié doit apprendre ou faire" /></label>
+            <label className="text-xs text-slate-300">Lien (vidéo, document…)<input type="url" maxLength={1000} value={sessionUrl} onChange={(e) => setSessionUrl(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-sm text-white" placeholder="https://…" /></label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-xs text-slate-300">Durée (min)<input type="number" min={1} max={1440} value={sessionDuration} onChange={(e) => setSessionDuration(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-sm text-white" /></label>
+              <label className="text-xs text-slate-300">À faire avant le<input type="date" value={sessionDueDate} onChange={(e) => setSessionDueDate(e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-carbon-850 px-3 py-2.5 text-sm text-white" /></label>
+            </div>
+            <div className="sm:col-span-2"><button disabled={saving} className={buttonClass} type="submit"><Plus size={14} /> Ajouter la session</button></div>
+          </form>
+          <div className="space-y-3">
+            {(record.elearningSessions || []).length === 0 ? <p className="text-sm text-slate-400">Aucune session ajoutée pour le moment.</p> : (record.elearningSessions || []).map((session) => (
+              <article key={session.id} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-carbon-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div><p className="text-sm font-bold text-white">{session.title}</p><p className="mt-1 text-xs text-slate-400">{session.category}{session.durationMinutes ? ` · ${session.durationMinutes} min` : ''}{session.dueDate ? ` · Échéance ${formatDate(session.dueDate)}` : ''}</p>{session.description && <p className="mt-2 text-xs text-slate-300">{session.description}</p>}</div>
+                <span className={`shrink-0 text-xs font-semibold ${session.completedAt ? 'text-emerald-300' : 'text-amber-300'}`}>{session.completedAt ? 'Terminée' : 'À suivre'}</span>
+              </article>
+            ))}
+          </div>
+        </Panel>
+      )}
+
       {tab === 'documents' && (
         <Panel
           title="Documents attendus"
@@ -642,32 +692,7 @@ export default function ManagerDetail({
             </Badge>
           }
         >
-          <div className="grid gap-4 sm:grid-cols-2">
-            {record.documents.map((d) => (
-              <article
-                key={d.id}
-                className="rounded-2xl border border-white/10 bg-carbon-850 p-5"
-              >
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <IconTile icon={FileCheck2} />
-                  <Badge tone={d.status === 'signed' ? 'green' : 'amber'}>
-                    {d.status === 'signed' ? 'Signé (démo)' : 'En attente'}
-                  </Badge>
-                </div>
-                <h3 className="text-sm font-bold text-white">{d.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-slate-400">
-                  {d.status === 'signed'
-                    ? d.signedAt
-                      ? `Enregistré le ${formatDate(d.signedAt)}`
-                      : 'Signature enregistrée'
-                    : 'À signer depuis l’espace collaborateur.'}
-                </p>
-                <div className="mt-5 border-t border-white/5 pt-3 text-[11px] text-slate-500">
-                  Suivi administratif · RH
-                </div>
-              </article>
-            ))}
-          </div>
+          <DocumentDispatch record={record} />
           <p className="mt-5 text-[11px] leading-relaxed text-slate-500">
             Signature simulée dans ce MVP. Vous consultez les statuts ; le
             contenu et la signature restent dans l’espace collaborateur.

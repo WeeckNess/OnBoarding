@@ -27,6 +27,17 @@ export interface HrCompliance {
   socialSecurity: ComplianceStatus;
   itCharter: ComplianceStatus;
 }
+export interface ElearningSession {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  durationMinutes: number | null;
+  resourceUrl: string;
+  dueDate: string;
+  completedAt?: string;
+  createdAt: string;
+}
 export interface OnboardingRecord {
   employee: Employee;
   managerId: string;
@@ -37,10 +48,15 @@ export interface OnboardingRecord {
   documents: {
     id: string;
     title: string;
+    description?: string;
+    resourceUrl?: string;
+    requestedBy?: string;
     status: 'pending' | 'signed';
     signedAt?: string;
+    signatureData?: string;
   }[];
   tasks: ManagedTask[];
+  elearningSessions?: ElearningSession[];
   goals: { id: string; title: string; dueDate: string; done: boolean }[];
   meetings: {
     id: string;
@@ -68,6 +84,7 @@ export interface OnboardingRecord {
 export interface Workspace {
   account: Account | null;
   records: OnboardingRecord[];
+  features?: { demoReset: boolean; profileSwitch?: boolean };
 }
 export type OnboardingAction =
   | {
@@ -88,6 +105,10 @@ export type OnboardingAction =
     }
   | { type: 'task.toggle'; id: string; done: boolean }
   | { type: 'task.delete'; id: string }
+  | { type: 'document.add'; title: string; description: string; resourceUrl: string }
+  | { type: 'document.sign'; id: string; signatureImage: string }
+  | { type: 'elearning.session.add'; session: Omit<ElearningSession, 'id' | 'createdAt' | 'completedAt'> }
+  | { type: 'elearning.session.complete'; id: string }
   | {
       type: 'goal.save';
       id?: string;

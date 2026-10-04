@@ -71,6 +71,7 @@ export async function applyAction(account: Account, id: string, payload: unknown
     'meeting.save',
     'blocker.resolve',
     'reminder',
+    'elearning.session.add',
   ];
   const employeeActions = [
     'blocker.create',
@@ -78,6 +79,8 @@ export async function applyAction(account: Account, id: string, payload: unknown
     'feedback',
     'notification.read',
     'sign',
+    'elearning.session.complete',
+    'document.sign',
     'reset',
   ];
   if (
@@ -88,6 +91,26 @@ export async function applyAction(account: Account, id: string, payload: unknown
     (action.type === 'hr.compliance.set' && account.appRole !== 'admin')
   )
     throw new HttpError(403, 'Cette action ne correspond pas à votre rôle.');
+  if (
+    ['request.save', 'task.save', 'task.delete'].includes(
+      String(action.type)
+    ) &&
+    !['manager', 'rh'].includes(account.appRole)
+  )
+    throw new HttpError(
+      403,
+      'Cette préparation est réservée au manager ou aux RH.'
+    );
+  if (action.type === 'document.add' && !['manager', 'rh', 'admin'].includes(account.appRole))
+    throw new HttpError(403, 'L’envoi de documents est réservé au manager et aux RH.');
+  if (
+    action.type === 'request.status' &&
+    !['manager', 'rh', 'it'].includes(account.appRole)
+  )
+    throw new HttpError(
+      403,
+      'Seul le service responsable peut traiter une demande.'
+    );
   const now = new Date().toISOString();
   let label = '';
   switch (action.type) {
@@ -202,6 +225,74 @@ export async function applyAction(account: Account, id: string, payload: unknown
       record.employee.completedTaskIds =
         record.employee.completedTaskIds.filter((id) => id !== task.id);
       label = `Tâche retirée : ${task.title}`;
+      break;
+    }
+    case 'document.add': {
+      if (record.documents.length >= 100) throw new HttpError(400, 'Limite de documents atteinte.');
+      const title = text(action.title, 150);
+      const description = text(action.description, 5000, false);
+      const resourceUrl = text(action.resourceUrl, 1000, false);
+      if (!description && !resourceUrl)
+        throw new HttpError(400, 'Ajoutez le contenu du document ou un lien vers celui-ci.');
+      if (resourceUrl) {
+        let parsed: URL;
+        try { parsed = new URL(resourceUrl); } catch { throw new HttpError(400, 'Lien invalide.'); }
+        if (!['http:', 'https:'].includes(parsed.protocol))
+          throw new HttpError(400, 'Le lien doit commencer par http:// ou https://.');
+      }
+      record.documents.push({
+        id: randomUUID(), title, description, resourceUrl,
+        requestedBy: `${account.firstName} ${account.lastName}`.trim(),
+        status: 'pending',
+      });
+      label = `Document envoyé pour signature : ${title}`;
+      break;
+    }
+    case 'document.sign': {
+      const document = find(record.documents, action.id);
+      if (['contract', 'nda'].includes(document.id))
+        throw new HttpError(400, 'Utilisez la signature du contrat prérempli.');
+      if (document.status === 'signed') throw new HttpError(400, 'Ce document est déjà signé.');
+      const signature = text(action.signatureImage, 180000);
+      if (!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(signature))
+        throw new HttpError(400, 'Signature PNG invalide.');
+      document.status = 'signed';
+      document.signedAt = now;
+      document.signatureData = signature;
+      label = `Document signé : ${document.title}`;
+      break;
+    }
+    case 'elearning.session.add': {
+      const input = object(action.session);
+      const resourceUrl = text(input.resourceUrl, 1000, false);
+      if (resourceUrl) {
+        let parsed: URL;
+        try { parsed = new URL(resourceUrl); } catch { throw new HttpError(400, 'Lien invalide.'); }
+        if (!['http:', 'https:'].includes(parsed.protocol))
+          throw new HttpError(400, 'Le lien doit commencer par http:// ou https://.');
+      }
+      const duration = input.durationMinutes;
+      if (duration !== null && (!Number.isInteger(duration) || Number(duration) < 1 || Number(duration) > 1440))
+        throw new HttpError(400, 'Durée invalide (1 à 1440 minutes).');
+      record.elearningSessions ||= [];
+      const session = {
+        id: randomUUID(),
+        title: text(input.title, 150),
+        description: text(input.description, 2000, false),
+        category: text(input.category, 100),
+        durationMinutes: duration === null ? null : Number(duration),
+        resourceUrl,
+        dueDate: input.dueDate ? date(input.dueDate) : '',
+        createdAt: now,
+      };
+      record.elearningSessions.push(session);
+      label = `Session e-learning ajoutée : ${session.title}`;
+      break;
+    }
+    case 'elearning.session.complete': {
+      const session = find(record.elearningSessions || [], action.id);
+      if (!session.completedAt) session.completedAt = now;
+      label = `Session e-learning terminée : ${session.title}`;
       break;
     }
     case 'goal.save': {
@@ -334,10 +425,13 @@ export async function applyAction(account: Account, id: string, payload: unknown
       record.employee.contractSigned = true;
       record.employee.signatureImage = signature;
       record.employee.signatureDate = now;
-      record.documents.forEach((d) => {
-        d.status = 'signed';
-        d.signedAt = now;
-      });
+      record.documents
+        .filter((document) => ['contract', 'nda'].includes(document.id))
+        .forEach((document) => {
+          document.status = 'signed';
+          document.signedAt = now;
+          document.signatureData = signature;
+        });
       record.employee.completedTaskIds = [
         ...new Set([...record.employee.completedTaskIds, 'task-j1-1']),
       ];
@@ -356,6 +450,7 @@ export async function applyAction(account: Account, id: string, payload: unknown
       record.documents.forEach((d) => {
         d.status = 'pending';
         delete d.signedAt;
+        delete d.signatureData;
       });
       label = 'Progression collaborateur réinitialisée';
       break;
