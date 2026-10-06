@@ -60,7 +60,7 @@ export const LUCCA_MOCK_DIRECTORY: LuccaMockPerson[] = Array.from(
   { length: 50 },
   (_, index) => {
     const number = index + 1;
-    const firstName = firstNames[Math.floor(index / lastNames.length)];
+    const firstName = firstNames[index % firstNames.length];
     // Rotate family names independently from the manager/departement assignment.
     const lastName = lastNames[(index * 7) % lastNames.length];
     const departmentIndex = index % departments.length;

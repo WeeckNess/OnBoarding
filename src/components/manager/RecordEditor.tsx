@@ -14,6 +14,7 @@ import { buttonClass, Field, inputClass, Modal, secondaryClass } from './ui';
 export type EditorKind =
   | 'welcome'
   | 'request'
+  | 'requestStatus'
   | 'task'
   | 'goal'
   | 'meeting'
@@ -41,6 +42,7 @@ export default function RecordEditor({
   const titles: Record<EditorKind, string> = {
     welcome: 'Organiser le premier jour',
     request: id ? 'Suivre la demande' : 'Préparer une demande',
+    requestStatus: 'Traiter la demande',
     task: id ? 'Adapter la tâche' : 'Attribuer une tâche',
     goal: id ? 'Adapter l’objectif' : 'Définir un objectif',
     meeting: meeting?.title || 'Point de suivi',
@@ -66,6 +68,7 @@ export default function RecordEditor({
         };
         break;
       case 'request':
+      case 'requestStatus':
         action = {
           type: 'request.save',
           request: {
@@ -214,7 +217,7 @@ export default function RecordEditor({
               </p>
             </>
           )}
-          {kind === 'request' && (
+          {(kind === 'request' || kind === 'requestStatus') && (
             <>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Type de demande">

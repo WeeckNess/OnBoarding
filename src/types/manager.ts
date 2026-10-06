@@ -1,6 +1,6 @@
 import type { Employee, RoadmapTask } from './index';
 
-export type AppRole = 'manager' | 'employee' | 'admin';
+export type AppRole = 'manager' | 'employee' | 'admin' | 'rh' | 'it';
 export type Account = Employee & { appRole: AppRole };
 export type RequestStatus = 'requested' | 'in_progress' | 'ready' | 'blocked';
 export interface PreparationRequest {
@@ -13,9 +13,11 @@ export interface PreparationRequest {
   status: RequestStatus;
   blocking: boolean;
   note: string;
+  validatedAt?: string;
+  validatedBy?: string;
 }
 export interface ManagedTask extends RoadmapTask {
-  owner: 'employee' | 'manager';
+  owner: 'employee' | 'manager' | 'rh';
   dueDate: string;
 }
 export type ComplianceStatus = 'pending' | 'complete';
@@ -78,6 +80,7 @@ export interface OnboardingRecord {
     message: string;
     createdAt: string;
     read: boolean;
+    source?: 'automatic';
   }[];
   activity: { id: string; actor: string; label: string; createdAt: string }[];
 }

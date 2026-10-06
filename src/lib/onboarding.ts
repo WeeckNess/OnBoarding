@@ -6,7 +6,7 @@ export const REQUEST_LABELS = {
   ready: 'Disponible',
   blocked: 'Bloqué',
 };
-export const OWNER_LABELS = { employee: 'Collaborateur', manager: 'Manager' };
+export const OWNER_LABELS = { employee: 'Collaborateur', manager: 'Manager', rh: 'RH' };
 export function dateOnly(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Paris',

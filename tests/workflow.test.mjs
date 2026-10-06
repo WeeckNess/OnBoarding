@@ -34,6 +34,9 @@ test(
           env: {
             ...process.env,
             ONBOARDING_DB_PATH: join(directory, 'test.sqlite'),
+            SUPABASE_URL: '',
+            SUPABASE_SECRET_KEY: '',
+            SUPABASE_SERVICE_ROLE_KEY: '',
             NEXT_TELEMETRY_DISABLED: '1',
           },
           stdio: ['ignore', 'pipe', 'pipe'],
@@ -85,9 +88,13 @@ test(
         },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
+      const rawBody = await response.text();
+      let parsedBody;
+      try { parsedBody = JSON.parse(rawBody); }
+      catch { throw new Error(`Unexpected response ${response.status} for ${method} ${path}: ${rawBody.slice(0, 300)}\nServer logs: ${logs}`); }
       return {
         status: response.status,
-        body: await response.json(),
+        body: parsedBody,
         cookie: response.headers.get('set-cookie')?.split(';')[0],
         headers: response.headers,
       };

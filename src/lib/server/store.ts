@@ -2,13 +2,14 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { ROADMAP_TASKS } from '../mockData';
+import { BUDDIES_DATA, ROADMAP_TASKS } from '../mockData';
 import { MOCK_ADMINS, MOCK_MANAGERS } from '../mockAccounts';
 import {
   LUCCA_MOCK_DIRECTORY,
   type LuccaMockPerson,
 } from '../integrations/lucca/mockDirectory';
 import { addDays, dateOnly } from '../onboarding';
+import { alertsFor } from '../onboarding';
 import type { Account, OnboardingRecord } from '@/types/manager';
 import { supabaseAdmin, supabaseIsConfigured } from './supabase';
 
@@ -153,6 +154,7 @@ export function database() {
     CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, account_id TEXT NOT NULL, expires_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS lucca_mock_people (person_id TEXT PRIMARY KEY, employee_id TEXT UNIQUE NOT NULL, manager_id TEXT NOT NULL, employment_status TEXT NOT NULL, payload TEXT NOT NULL, imported_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS workspace_settings (setting_key TEXT PRIMARY KEY, setting_value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS notification_reads (account_id TEXT NOT NULL, notification_id TEXT NOT NULL, PRIMARY KEY (account_id, notification_id));
     CREATE INDEX IF NOT EXISTS onboardings_manager ON onboardings(manager_id);
     CREATE INDEX IF NOT EXISTS lucca_people_manager ON lucca_mock_people(manager_id);`);
   db.exec('DROP TABLE IF EXISTS account_credentials;');
@@ -193,6 +195,16 @@ export function database() {
 
   globalDb.dataInsightOnboardingDbV3 = { path, connection: db };
   return db;
+}
+
+function automaticReminders(record: OnboardingRecord) {
+  return alertsFor(record).map((alert) => ({
+    id: `automatic-${record.employee.id}-${alert.id}`,
+    message: alert.title,
+    createdAt: new Date().toISOString(),
+    read: false,
+    source: 'automatic' as const,
+  }));
 }
 
 export class HttpError extends Error {
