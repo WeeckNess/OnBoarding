@@ -8,6 +8,21 @@ L’arrivée dans une entreprise implique beaucoup de petites étapes : prépare
 
 Le projet présente un **cas d’usage RH complet**, depuis la préparation de l’arrivée jusqu’au suivi de l’intégration. L’annuaire et les personnes utilisés dans la démonstration sont fictifs ; l’intégration Lucca est simulée.
 
+## Aperçu du projet
+
+![Tableau de bord manager avec les arrivées et les tâches de l’équipe](docs/images/manager.png)
+
+*Capture de la démonstration locale : toutes les personnes et données sont fictives.*
+
+<details>
+<summary>Voir la préparation d’une arrivée et la connexion</summary>
+
+![Fiche de préparation du premier jour](docs/images/parcours.png)
+
+![Accueil avec accès aux profils de démonstration](docs/images/connexion.png)
+
+</details>
+
 ## Le projet en un regard
 
 | Pour qui ? | Ce que l’application apporte |
