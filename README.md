@@ -1,39 +1,86 @@
-# Data Insight · Parcours d’intégration
+# OnBoarding · Data Insight
 
-Application Next.js réunissant l’espace salarié et le portail manager. Le répertoire RH Lucca reste fictif. Le serveur utilise Supabase lorsque `SUPABASE_URL` et `SUPABASE_SECRET_KEY` sont définies dans `.env.local`; sans ces clés, il utilise SQLite localement. Le projet Supabase lié contient déjà le schéma et les 50 dossiers fictifs.
+### Un parcours d’intégration partagé entre le salarié, son manager et les RH.
 
-## Lancer l’application
+**Next.js · React · TypeScript · Supabase / SQLite**
 
-Pré-requis : Node.js 22.13+ ou 24+.
+L’arrivée dans une entreprise implique beaucoup de petites étapes : préparer le matériel, transmettre les informations utiles, organiser les premières semaines et suivre les points d’étape. OnBoarding réunit ce parcours dans une application, avec un espace adapté à chaque rôle.
+
+Le projet présente un **cas d’usage RH complet**, depuis la préparation de l’arrivée jusqu’au suivi de l’intégration. L’annuaire et les personnes utilisés dans la démonstration sont fictifs ; l’intégration Lucca est simulée.
+
+## Le projet en un regard
+
+| Pour qui ? | Ce que l’application apporte |
+| --- | --- |
+| Salarié | Retrouver ses informations d’arrivée, sa feuille de route, ses documents et ses ressources. |
+| Manager | Préparer l’accueil, le matériel, les accès, les tâches et les objectifs, puis suivre les dossiers de son équipe. |
+| RH / administration | Consulter les espaces de suivi et les dossiers d’intégration à partir d’un annuaire commun. |
+
+## Les parcours
+
+**Avant l’arrivée** → préparer l’accueil et les informations pratiques.  
+**Premiers jours** → retrouver sa feuille de route, son buddy et ses ressources.  
+**Pendant l’intégration** → suivre les tâches, les objectifs et les échanges avec le manager.
+
+- Portail manager et fiches de suivi par salarié.
+- Espace salarié : arrivée, tableau de bord, roadmap, documents, buddy, ressources et e-learning.
+- Stockage partagé entre les portails, avec une version locale SQLite et un adaptateur Supabase.
+- Sessions par cookie HttpOnly, mots de passe hachés avec scrypt et vérification des mutations côté serveur.
+- Un annuaire de **50 profils fictifs** pour explorer les différents rôles.
+
+## Choix techniques
+
+L’application utilise **Next.js App Router** pour réunir les écrans et les routes serveur. **TypeScript** structure les données et les échanges entre les parcours.
+
+Sans configuration externe, le serveur initialise une base **SQLite locale**. Lorsque les variables Supabase sont renseignées, les dossiers et les sessions sont persistés dans **Supabase**. Les migrations et le jeu initial sont versionnés dans `supabase/`.
+
+Le connecteur Lucca est volontairement simulé : cela permet de présenter le parcours sans utiliser un annuaire d’entreprise réel.
+
+## Essayer en local
+
+Prérequis : **Node.js 22.13+ ou 24+**, npm et Git.
 
 ```sh
+git clone https://github.com/WeeckNess/OnBoarding.git
+cd OnBoarding
 npm ci
 npm run dev
 ```
 
-Ouvrir http://localhost:3000 et saisir manuellement l’adresse email associée à une fiche. Les profils managers sont listés dans [la documentation technique](docs/INTEGRATION_LUCCA_SUPABASE.md). L’écran de connexion propose des boutons d’accès rapide aux profils de démonstration RH, manager et salarié. Ils sont visibles en développement ; en production, activez-les explicitement avec `DEMO_PROFILE_SWITCH_ENABLED=true` (et gardez `DEMO_ACCESS_ENABLED` actif). Les adresses des 50 salariés sont générées dans `src/lib/integrations/lucca/mockDirectory.ts` et utilisent le domaine réservé `.example`.
+Ouvrir **http://localhost:3000**. Pour l’essai local, ne pas renseigner de variables Supabase : l’annuaire fictif et la base SQLite sont initialisés au premier accès.
 
-Sans identifiants Supabase, au premier accès, l’annuaire simulé charge 50 personnes et crée leurs dossiers d’intégration dans `.data/onboarding-supabase-mock.sqlite`. Les dossiers restent partagés entre les espaces manager et salarié. La base précédente, `.data/onboarding.sqlite`, n’est pas modifiée.
+L’écran de connexion propose en développement des accès aux profils de démonstration salarié, manager et RH. Au premier accès d’un compte, définir son mot de passe. Les adresses `.example` sont fictives.
 
-## Parcours
+Pour utiliser une instance Supabase indépendante, partir de `.env.example` et suivre le [guide d’intégration](docs/INTEGRATION_LUCCA_SUPABASE.md). Les clés serveur restent dans `.env.local`, jamais dans le navigateur ni dans Git.
 
-- Les managers voient les dossiers qui leur sont affectés, préparent l’accueil, les accès, le matériel, les tâches, les objectifs et les points d’étape.
-- Les salariés retrouvent la préparation, leur feuille de route, les documents, les ressources et les échanges avec leur manager.
-- La projection de l’annuaire part de 50 personnes et vise 70 personnes au 31 décembre 2027.
+## Repères dans le dépôt
 
-## Stockage et intégration simulée
+```text
+src/app/                 Écrans, portails et routes serveur
+src/lib/                 Données et intégrations
+supabase/migrations/     Évolution du schéma
+supabase/seed.sql        Annuaire fictif initial
+tests/                   Tests des parcours
+docs/                    Documentation technique
+```
 
-`src/lib/integrations/lucca/mockDirectory.ts` fournit les fiches RH fictives. Le serveur les importe une fois dans `lucca_mock_people`, puis initialise les dossiers manager/salarié correspondants. Le parcours est conservé dans SQLite en mode local.
+## Vérifications disponibles
 
-Le schéma Supabase et les 50 fiches initiales sont dans `supabase/migrations/` et `supabase/seed.sql`. Le schéma et le jeu initial ont été appliqués au projet Supabase lié. L’adaptateur serveur persiste les dossiers, les signatures et les sessions dans cette base. La clé secrète reste côté serveur et n’est jamais exposée au navigateur. Pour une nouvelle instance, renseigner `.env.local`, puis appliquer la migration et le seed selon les étapes de la documentation technique.
+```sh
+npm run typecheck
+npm test
+npm run build
+```
 
-Les choix d’architecture, le mapping des champs, le modèle de synchronisation et les étapes nécessaires pour remplacer le faux connecteur figurent dans [docs/INTEGRATION_LUCCA_SUPABASE.md](docs/INTEGRATION_LUCCA_SUPABASE.md).
+## Périmètre et limites
 
-## Portails
+Ce dépôt présente un **prototype fonctionnel de parcours RH**. Il ne se connecte pas à une instance Lucca réelle. La signature de documents est simulée, sans prestataire externe.
 
-- `/manager` : vue manager filtrée par équipe.
-- `/manager/[id]` : préparation et suivi d’un salarié.
-- `/arrival` : informations d’arrivée préparées par le manager.
-- `/dashboard`, `/roadmap`, `/contracts`, `/buddy`, `/codex`, `/elearning` : espace salarié.
+Le premier choix d’un mot de passe associé à une adresse fictive ne remplace pas un parcours d’invitation et de vérification d’identité pour une entreprise réelle. Un déploiement avec de vrais salariés demande une configuration et une validation adaptées.
 
-Les mutations sont validées et autorisées côté serveur. Les sessions utilisent un cookie HttpOnly et expirent après huit heures. À la première connexion, chaque compte doit créer un mot de passe de 12 caractères minimum ; les mots de passe sont hachés avec scrypt et un sel aléatoire. Ils peuvent être modifiés dans « Compte & sécurité ». Les emails `.example` restent des identifiants fictifs non vérifiés : le premier choix du mot de passe ne remplace pas une invitation ou une vérification d’adresse pour un déploiement réel. La signature est une simulation sans prestataire externe.
+## En savoir plus
+
+- [Guide de développement et détail des portails](DEVELOPMENT.md)
+- [Architecture, modèle de données et intégration Lucca / Supabase](docs/INTEGRATION_LUCCA_SUPABASE.md)
+
+Projet présenté dans le portfolio de **Thom Legros — [WeeckNess](https://github.com/WeeckNess)**.
